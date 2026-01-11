@@ -2,16 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Sea Farer — Modern Warfare Scope Hunt (UAV + Recoil)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Sea Farer — Tilt Scope Hunt (Mobile MW)</title>
   <style>
     :root{
       --hud: rgba(235,240,255,0.92);
       --hud2: rgba(235,240,255,0.72);
       --warn: rgba(255,210,90,0.95);
+      --ok: rgba(120,255,190,0.95);
     }
 
-    html,body{height:100%; margin:0; overflow:hidden; background:#05060b; color:var(--hud);
+    html,body{
+      height:100%; margin:0; overflow:hidden; background:#05060b; color:var(--hud);
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       user-select:none; -webkit-user-select:none; touch-action:none;
     }
@@ -52,7 +54,7 @@
       position:absolute; left:14px; bottom:14px;
       pointer-events:none;
       display:flex; gap:10px; flex-wrap:wrap;
-      width:min(520px, calc(100vw - 28px));
+      width:min(560px, calc(100vw - 28px));
     }
     .pill{
       background: rgba(0,0,0,0.38);
@@ -70,7 +72,7 @@
     .banner{
       position:absolute;
       left:50%; transform:translateX(-50%);
-      bottom:84px;
+      bottom:106px;
       pointer-events:none;
       opacity:0;
       transition: opacity 160ms ease, transform 160ms ease;
@@ -85,44 +87,74 @@
       box-shadow: 0 12px 46px rgba(0,0,0,0.45);
       white-space:nowrap;
     }
-    .banner.show{
-      opacity:1;
-      transform:translateX(-50%) translateY(-4px);
-    }
+    .banner.show{ opacity:1; transform:translateX(-50%) translateY(-4px); }
     .banner small{ color: var(--hud2); font-size:12px; margin-left:10px; }
 
-    .tips{
-      position:absolute; right:14px; top:12px; width:min(520px, calc(100vw - 28px));
-      pointer-events:none;
-      display:flex; flex-direction:column; gap:10px; align-items:flex-end;
-    }
-    .tip{
-      background: rgba(0,0,0,0.44);
-      border:1px solid rgba(255,255,255,0.12);
-      border-radius: 14px;
-      padding:10px 12px;
+    /* Floating controls */
+    .shootBtn{
+      position:absolute;
+      right:16px;
+      bottom:16px;
+      width:74px;
+      height:74px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.16);
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.18), rgba(255,255,255,0.08));
       backdrop-filter: blur(10px);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
-      font-size:12px;
-      color: var(--hud2);
-      max-width: 520px;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.55);
+      display:flex; align-items:center; justify-content:center;
+      color:var(--hud);
+      font-weight:900;
+      letter-spacing:0.4px;
+      cursor:pointer;
+      touch-action:none;
     }
-    .tip b{ color: var(--warn); }
+    .shootBtn:active{ transform: scale(0.98); }
 
-    .controls{
-      position:absolute; right:14px; bottom:14px;
-      pointer-events:auto;
+    .permWrap{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(10px);
     }
-    .rowbtn{ display:flex; gap:10px; flex-wrap:wrap; }
-    button{
+    .permCard{
+      width:min(520px, calc(100vw - 28px));
+      background: rgba(0,0,0,0.45);
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:18px;
+      padding:16px;
+      box-shadow: 0 20px 70px rgba(0,0,0,0.55);
+    }
+    .permCard h3{
+      margin:0 0 10px 0;
+      font-size:14px;
+      text-transform:uppercase;
+      letter-spacing:0.7px;
+      color:var(--hud);
+    }
+    .permCard p{
+      margin:0 0 12px 0;
+      color:var(--hud2);
+      font-size:13px;
+      line-height:1.35;
+    }
+    .permRow{ display:flex; gap:10px; flex-wrap:wrap; }
+    .btn{
       appearance:none; border:none; cursor:pointer;
-      border-radius:12px; padding:10px 12px;
+      border-radius:14px; padding:11px 12px;
       background: rgba(255,255,255,0.10);
       color: var(--hud);
       border: 1px solid rgba(255,255,255,0.14);
-      font-weight:800; letter-spacing:0.2px;
+      font-weight:900;
+      letter-spacing:0.2px;
     }
-    button:hover{ background: rgba(255,255,255,0.14); }
+    .btn.ok{ border-color: rgba(120,255,190,0.35); }
+    .btn.warn{ border-color: rgba(255,210,90,0.35); }
+    .mini{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--hud2);
+    }
   </style>
 </head>
 <body>
@@ -132,8 +164,8 @@
   <div class="mw-top">
     <div class="mw-card">
       <div class="mw-title">
-        <span>Sea Farer — Modern Warfare</span>
-        <span id="adsTxt">ADS: OFF</span>
+        <span>Sea Farer — Tilt Scope</span>
+        <span id="modeTxt">MODE: MOBILE</span>
       </div>
       <div class="mw-grid">
         <div>Round <b id="roundTxt">1</b></div>
@@ -142,7 +174,7 @@
         <div>Hint <b id="hintTxt">—</b></div>
         <div>Ammo <b id="ammoTxt">30 / 90</b></div>
         <div>Wind <b id="windTxt">0.0 kt</b></div>
-        <div>Range <b id="rangeTxt">0 m</b></div>
+        <div>Zoom <b id="zoomTxt">3.4x</b></div>
         <div>Points <b id="pointsTxt">0</b></div>
       </div>
     </div>
@@ -150,19 +182,28 @@
 
   <div class="mw-bottom">
     <div class="pill">Kills <b id="killsTxt">0</b> / Shots <b id="shotsTxt">0</b></div>
-    <div class="pill">Streak <b id="streakTxt">0</b></div>
+    <div class="pill">Streak <b id="streakTxt">0</b> (UAV@4)</div>
     <div class="pill">Targets left <b id="leftTxt">3</b></div>
   </div>
 
   <div class="banner" id="banner">Target Down <small id="bannerSub">+100</small></div>
 
-  <div class="tips" id="tips"></div>
+  <button class="shootBtn" id="shootBtn" aria-label="Shoot">FIRE</button>
 
-  <div class="controls">
-    <div class="rowbtn">
-      <button id="resetBtn">Reset</button>
-      <button id="shuffleBtn">Shuffle</button>
-      <button id="visionBtn">Vision: Normal</button>
+  <div class="permWrap" id="permWrap" style="display:none;">
+    <div class="permCard">
+      <h3>Enable tilt controls</h3>
+      <p>
+        This mode uses your phone’s motion sensors to aim the scope.
+        Tap “Enable Tilt” to grant motion permission (needed on iPhone/iPad).
+      </p>
+      <div class="permRow">
+        <button class="btn ok" id="enableTiltBtn">Enable Tilt</button>
+        <button class="btn warn" id="noTiltBtn">Continue Without Tilt</button>
+      </div>
+      <div class="mini">
+        Controls: tilt to aim • pinch to zoom • tap FIRE to shoot • two-finger tap to reload.
+      </div>
     </div>
   </div>
 </div>
@@ -173,14 +214,14 @@
   const ctx = canvas.getContext('2d', { alpha:true });
 
   // UI
-  const adsTxt = document.getElementById('adsTxt');
+  const modeTxt = document.getElementById('modeTxt');
   const roundTxt = document.getElementById('roundTxt');
   const timerTxt = document.getElementById('timerTxt');
   const objTxt = document.getElementById('objTxt');
   const hintTxt = document.getElementById('hintTxt');
   const ammoTxt = document.getElementById('ammoTxt');
   const windTxt = document.getElementById('windTxt');
-  const rangeTxt = document.getElementById('rangeTxt');
+  const zoomTxt = document.getElementById('zoomTxt');
   const pointsTxt = document.getElementById('pointsTxt');
 
   const killsTxt = document.getElementById('killsTxt');
@@ -190,42 +231,42 @@
 
   const banner = document.getElementById('banner');
   const bannerSub = document.getElementById('bannerSub');
-  const tipsEl = document.getElementById('tips');
 
-  const resetBtn = document.getElementById('resetBtn');
-  const shuffleBtn = document.getElementById('shuffleBtn');
-  const visionBtn = document.getElementById('visionBtn');
+  const shootBtn = document.getElementById('shootBtn');
 
-  // ===== MW FEEL CONFIG =====
+  const permWrap = document.getElementById('permWrap');
+  const enableTiltBtn = document.getElementById('enableTiltBtn');
+  const noTiltBtn = document.getElementById('noTiltBtn');
+
+  // ===== CONFIG =====
   const WORLD_W = 2800;
   const WORLD_H = 1900;
 
   const NUM_CHAR = 95;
   const CHAR_SIZE = 15;
 
-  // Hits / assist
-  const HIT_RADIUS = 24;
-  const AIM_ASSIST_RADIUS = 95;
-  const AIM_ASSIST_STRENGTH = 0.16;
-  const DANCE_RADIUS = 85;
+  // Hits / assist (mobile needs it slightly friendlier)
+  const HIT_RADIUS = 26;
+  const AIM_ASSIST_RADIUS = 120;
+  const AIM_ASSIST_STRENGTH = 0.18;
+  const DANCE_RADIUS = 95;
 
-  // Ballistics (mild)
+  // Ballistics
   const MUZZLE_V = 980;
   const MAX_TOF  = 0.85;
   const WIND_KT_TO_DRIFT = 0.30;
 
-  // Camera / ADS
-  const CAM_FOLLOW = 0.16;
-  const ZOOM_OFF = 1.0;
-  const ZOOM_ON  = 3.4;
-  const ZOOM_SPEED = 0.18;
+  // Camera / zoom
+  const CAM_FOLLOW = 0.18;
 
-  // Sway
-  const SWAY_MAG = 1.35;
-  const SWAY_SPEED = 0.0016;
+  // IMPORTANT: on mobile scope is always ON (zoom ranges)
+  const ZOOM_MIN = 1.8;
+  const ZOOM_MAX = 6.0;
+  const ZOOM_START = 3.4;
+  const ZOOM_SPEED = 0.22;
 
-  // Shot shake (visual)
-  const SHAKE_ON_SHOT = 5.5;
+  // Shot shake
+  const SHAKE_ON_SHOT = 5.8;
   const SHAKE_DECAY = 0.86;
 
   // Ammo
@@ -237,28 +278,26 @@
   const TARGETS_PER_ROUND = 3;
   const ROUND_TIME_S = 60;
 
-  // UAV streak
+  // UAV
   const UAV_STREAK_REQ = 4;
-  const UAV_DURATION_MS = 4200;      // few seconds, MW-ish
-  const UAV_PING_EVERY_MS = 520;     // ping cadence
-  const UAV_PING_FLASH_MS = 220;     // flash on screen
-  const UAV_PING_RADIUS_PX = 28;     // on-screen ping size
-  const UAV_OFFSCREEN_EDGE_PAD = 18; // how close to edge indicator sits
+  const UAV_DURATION_MS = 4200;
+  const UAV_PING_EVERY_MS = 520;
+  const UAV_PING_FLASH_MS = 220;
+  const UAV_PING_RADIUS_PX = 28;
+  const UAV_OFFSCREEN_EDGE_PAD = 18;
 
-  // Recoil pattern (MW-ish)
-  const RECOIL_PER_SHOT_Y = 10.0;   // px (screen-space)
-  const RECOIL_PER_SHOT_X = 2.2;    // px (screen-space)
-  const RECOIL_RANDOM_X = 0.9;      // px
-  const RECOIL_ADS_MULT = 0.78;     // ADS recoil slightly reduced
-  const RECOIL_BREATH_MULT = 0.70;  // holding breath steadier
+  // Recoil pattern (mobile: moderate)
+  const RECOIL_PER_SHOT_Y = 9.0;
+  const RECOIL_PER_SHOT_X = 2.0;
+  const RECOIL_RANDOM_X = 0.9;
+  const RECOIL_RETURN = 0.22;
+  const RECOIL_DAMP = 0.82;
 
-  // Recoil recovery (springy return)
-  const RECOIL_RETURN = 0.22;       // pull back toward 0
-  const RECOIL_DAMP = 0.82;         // damp velocity
-
-  // Vision
-  const visionModes = ["Normal","Night Vision","Thermal"];
-  let visionIndex = 0;
+  // Tilt sensitivity (tweak these to taste)
+  const TILT_SENS_X = 0.95;   // gamma sensitivity
+  const TILT_SENS_Y = 0.95;   // beta sensitivity
+  const TILT_SMOOTH = 0.14;   // smoothing of tilt input
+  const TILT_DEADZONE = 1.2;  // degrees
 
   // DPR resize
   let W=0, H=0, DPR=1;
@@ -277,14 +316,19 @@
   const dist=(ax,ay,bx,by)=>Math.hypot(ax-bx,ay-by);
   const lerp=(a,b,t)=>a+(b-a)*t;
 
-  // Tiny audio
-  let audioCtx = null;
-  function beep(freq=880, dur=0.05, type="square", gain=0.04){
+  // ===== Audio (Zoom ticks + gunshot) =====
+  let audioCtx=null;
+  function ensureAudio(){
+    if(audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  function clickTick(freq=520, dur=0.03, gain=0.05){
     try{
-      if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      ensureAudio();
       const o = audioCtx.createOscillator();
       const g = audioCtx.createGain();
-      o.type = type;
+      o.type = "square";
       o.frequency.value = freq;
       g.gain.value = gain;
       o.connect(g); g.connect(audioCtx.destination);
@@ -293,17 +337,56 @@
     }catch{}
   }
 
-  function tip(html, ms=1800){
-    const div = document.createElement('div');
-    div.className='tip';
-    div.innerHTML = html;
-    tipsEl.appendChild(div);
-    setTimeout(()=>{
-      div.style.transition='opacity 260ms ease, transform 260ms ease';
-      div.style.opacity='0';
-      div.style.transform='translateY(-6px)';
-      setTimeout(()=>div.remove(),320);
-    }, ms);
+  // A deeper “gun pop” using noise + sine thump (still lightweight)
+  function gunShot(){
+    try{
+      ensureAudio();
+      const t = audioCtx.currentTime;
+
+      // Thump
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(140, t);
+      osc.frequency.exponentialRampToValueAtTime(70, t+0.06);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.22, t+0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t+0.10);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(t); osc.stop(t+0.11);
+
+      // Noise “crack”
+      const bufferSize = Math.floor(audioCtx.sampleRate * 0.06);
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * (1 - i/bufferSize);
+
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const ng = audioCtx.createGain();
+      ng.gain.setValueAtTime(0.0001, t);
+      ng.gain.exponentialRampToValueAtTime(0.16, t+0.005);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t+0.06);
+
+      noise.connect(ng); ng.connect(audioCtx.destination);
+      noise.start(t); noise.stop(t+0.07);
+    }catch{}
+  }
+
+  function beep(freq=880, dur=0.05, type="sine", gain=0.04){
+    try{
+      ensureAudio();
+      const t = audioCtx.currentTime;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type;
+      o.frequency.value = freq;
+      g.gain.value = gain;
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t);
+      o.stop(t + dur);
+    }catch{}
   }
 
   function showBanner(text, sub="+100", ms=900){
@@ -313,32 +396,44 @@
     setTimeout(()=>banner.classList.remove("show"), ms);
   }
 
-  // Cursor
-  const cursor = { x: W/2, y: H/2 };
+  // ===== Mobile-centric input model =====
+  // We keep the crosshair centered and tilt moves the camera aim point.
+  const cross = { x: 0, y: 0 }; // screen center each frame
+  function updateCrossCenter(){
+    cross.x = W/2;
+    cross.y = H/2;
+  }
+  updateCrossCenter();
 
-  // Camera
+  // Tilt reading
+  const tilt = { beta:0, gamma:0, sb:0, sg:0, enabled:false };
+  function deadzone(v){
+    return (Math.abs(v) < TILT_DEADZONE) ? 0 : v - Math.sign(v)*TILT_DEADZONE;
+  }
+
+  // Pinch-to-zoom state
+  let pinching=false;
+  let pinchStartDist=0;
+  let pinchStartZoom=ZOOM_START;
+  let lastZoomTickAt=0;
+
+  // ===== World / Camera =====
   const cam = { x: WORLD_W/2, y: WORLD_H/2, shakeX:0, shakeY:0 };
-
-  // ADS + zoom
-  let scoped=false;
-  let zoom=ZOOM_OFF;
-  let zoomTarget=ZOOM_OFF;
-
-  // Breath hold reduces sway & recoil
-  let holdBreath=false;
+  let zoom = ZOOM_START;
+  let zoomTarget = ZOOM_START;
 
   // Wind
   const wind = { base: rand(7, 14), dir: Math.random()*Math.PI*2 };
   let gust = { extra:0, until:0, active:false };
   function effectiveWind(){ return wind.base + (gust.active ? gust.extra : 0); }
 
-  // Ammo/reload
+  // Ammo
   let mag = MAG_SIZE;
   let reserve = RESERVE_START;
   let reloading=false;
   let reloadUntil=0;
 
-  // Score/stats
+  // Stats
   let shots=0, kills=0, streak=0, points=0;
 
   // Round
@@ -347,20 +442,15 @@
   let roundTargets=[];
   let currentTargetIndex=0;
 
-  // UAV state
-  let uavActiveUntil = 0;
-  let uavNextPingAt = 0;
-  let uavPingFlashUntil = 0;
-  let uavAnnounceUntil = 0;
-  let uavArmed = true; // can trigger again after streak hits requirement anew
+  // UAV
+  let uavActiveUntil=0, uavNextPingAt=0, uavPingFlashUntil=0, uavAnnounceUntil=0;
+  let uavArmed=true;
 
-  // Recoil state (screen-space offset applied to aim)
-  const recoil = {
-    x: 0, y: 0,
-    vx: 0, vy: 0
-  };
+  // Recoil (screen-space)
+  const recoil = { x:0, y:0, vx:0, vy:0 };
+  let recoilStep=0;
 
-  // World content
+  // Icons/Characters
   const ICONS = [
     { name:"Pika-ish", glyph:"⚡", hue: 52 },
     { name:"DBZ-ish",  glyph:"✦", hue: 40 },
@@ -411,73 +501,9 @@
     return { x: wx, y: wy };
   }
 
-  // Input
-  function setCursorFromEvent(e){
-    const rect = canvas.getBoundingClientRect();
-    const x = (('clientX' in e) ? e.clientX : e.touches[0].clientX) - rect.left;
-    const y = (('clientY' in e) ? e.clientY : e.touches[0].clientY) - rect.top;
-    cursor.x = x * DPR;
-    cursor.y = y * DPR;
-  }
-  canvas.addEventListener('contextmenu', (e)=>e.preventDefault());
-
-  // Desktop
-  canvas.addEventListener('mousemove', (e)=>setCursorFromEvent(e), { passive:true });
-  canvas.addEventListener('mousedown', (e)=>{
-    setCursorFromEvent(e);
-    if(e.button===2){ toggleADS(); return; }
-    if(e.button===0){ shoot(); return; }
-  }, { passive:true });
-
-  // Mobile: long press ADS, tap shoot, two-finger tap reload
-  let pressTimer=null;
-  canvas.addEventListener('touchstart', (e)=>{
-    setCursorFromEvent(e);
-    if(e.touches && e.touches.length>=2){ reload(); return; }
-    pressTimer = setTimeout(()=>{ toggleADS(); pressTimer=null; }, 300);
-  }, { passive:false });
-  canvas.addEventListener('touchmove', (e)=>setCursorFromEvent(e), { passive:false });
-  canvas.addEventListener('touchend', ()=>{
-    if(pressTimer){
-      clearTimeout(pressTimer);
-      pressTimer=null;
-      shoot();
-    }
-  }, { passive:false });
-
-  addEventListener('keydown', (e)=>{
-    const k=e.key.toLowerCase();
-    if(k==='r') reload();
-    if(k==='n') cycleVision();
-    if(k==='escape') resetRound();
-    if(e.key==='Shift') holdBreath=true;
-  });
-  addEventListener('keyup', (e)=>{
-    if(e.key==='Shift') holdBreath=false;
-  });
-
-  resetBtn.addEventListener('click', resetRound);
-  shuffleBtn.addEventListener('click', ()=>{
-    spawn(); buildRoundTargets();
-    tip("Crowd shuffled. Targets updated.", 1400);
-  });
-  visionBtn.addEventListener('click', cycleVision);
-
-  function toggleADS(){
-    scoped=!scoped;
-    zoomTarget=scoped ? ZOOM_ON : ZOOM_OFF;
-    adsTxt.textContent = `ADS: ${scoped ? "ON" : "OFF"}`;
-    beep(scoped ? 520 : 420, 0.05, "sine", 0.04);
-  }
-
-  function cycleVision(){
-    visionIndex = (visionIndex+1) % visionModes.length;
-    visionBtn.textContent = `Vision: ${visionModes[visionIndex]}`;
-    tip(`Vision: <b>${visionModes[visionIndex]}</b>`, 1000);
-  }
-
-  // Targets per round
+  // ===== Targets / Objective =====
   function quant(v, step){ return Math.round(v/step)*step; }
+  function currentTargetId(){ return roundTargets[currentTargetIndex] ?? null; }
 
   function buildRoundTargets(){
     const alive=chars.filter(c=>c.alive);
@@ -491,8 +517,6 @@
     }
     updateObjectiveUI();
   }
-
-  function currentTargetId(){ return roundTargets[currentTargetIndex] ?? null; }
 
   function updateObjectiveUI(){
     const id=currentTargetId();
@@ -508,11 +532,9 @@
     leftTxt.textContent = String(roundTargets.length - currentTargetIndex);
   }
 
-  function updateAmmoUI(){
-    ammoTxt.textContent = `${mag} / ${reserve}`;
-  }
+  function updateAmmoUI(){ ammoTxt.textContent = `${mag} / ${reserve}`; }
 
-  // Ballistics
+  // ===== Ballistics / Aim assist =====
   function calcTof(range){
     const t = range / MUZZLE_V;
     return clamp(t, 0.04, MAX_TOF);
@@ -523,17 +545,13 @@
     return { x: aimW.x + Math.cos(wind.dir)*drift, y: aimW.y + Math.sin(wind.dir)*drift };
   }
 
-  // Aim assist (ADS only) + recoil offset (screen space) applied to aim
-  function getAimedWorldWithAssist(){
-    // Apply recoil as a screen-space offset opposite the user’s compensation:
-    // if recoil kicks UP, we effectively move the aiming point UP, so the player must pull DOWN.
-    const aimScreenX = cursor.x + recoil.x * DPR;
-    const aimScreenY = cursor.y + recoil.y * DPR;
-
+  // Our "aim point" is the centered crosshair (plus recoil)
+  function getAimWorld(){
+    const aimScreenX = cross.x + recoil.x * DPR;
+    const aimScreenY = cross.y + recoil.y * DPR;
     const raw = screenToWorld(aimScreenX, aimScreenY);
 
-    if(!scoped) return raw;
-
+    // assist (always, but subtle)
     let best=null, bestD=Infinity;
     for(const c of chars){
       if(!c.alive) continue;
@@ -542,68 +560,58 @@
     }
     if(!best) return raw;
 
-    const strengthBase = AIM_ASSIST_STRENGTH + (holdBreath ? 0.06 : 0.0);
-    return { x: lerp(raw.x, best.x, strengthBase), y: lerp(raw.y, best.y, strengthBase) };
+    return { x: lerp(raw.x, best.x, AIM_ASSIST_STRENGTH), y: lerp(raw.y, best.y, AIM_ASSIST_STRENGTH) };
   }
 
-  // Reload
+  // ===== Reload / Shoot =====
   function reload(){
     if(reloading) return;
     if(mag >= MAG_SIZE){ beep(200,0.06,"square",0.04); return; }
-    if(reserve <= 0){ tip("No reserve ammo.", 1000); beep(160,0.07,"square",0.04); return; }
+    if(reserve <= 0){ beep(160,0.07,"square",0.04); return; }
     reloading = true;
     reloadUntil = performance.now() + RELOAD_MS;
-    tip("Reloading…", 700);
-    beep(280,0.05,"sine",0.04);
+    beep(280, 0.05, "sine", 0.04);
   }
 
-  // Bullet visuals + hits
   const bullets=[];
   let hitMarkerUntil=0;
 
-  // Recoil kick pattern
-  let recoilStep = 0;
   function applyRecoilKick(){
-    const adsMult = scoped ? RECOIL_ADS_MULT : 1.0;
-    const breathMult = holdBreath ? RECOIL_BREATH_MULT : 1.0;
-
-    // Pattern: slight horizontal drift that alternates, with a small random component
     const dir = (recoilStep % 6 < 3) ? 1 : -1;
     const drift = dir * RECOIL_PER_SHOT_X + (Math.random()*2-1)*RECOIL_RANDOM_X;
-
-    // Vertical always climbs
     const up = RECOIL_PER_SHOT_Y;
 
-    const kx = drift * adsMult * breathMult;
-    const ky = -up * adsMult * breathMult; // negative y = up on screen
-
-    // Add to velocity (impulse)
-    recoil.vx += kx * 0.45;
-    recoil.vy += ky * 0.55;
+    recoil.vx += drift * 0.45;
+    recoil.vy += (-up) * 0.55;
 
     recoilStep++;
   }
 
+  function activateUAV(now){
+    uavActiveUntil = now + UAV_DURATION_MS;
+    uavNextPingAt = now;
+    uavPingFlashUntil = now + UAV_PING_FLASH_MS;
+    uavAnnounceUntil = now + 1200;
+    beep(650, 0.08, "sine", 0.05);
+    beep(980, 0.07, "sine", 0.04);
+  }
+
   function shoot(){
     if(reloading) return;
+    if(mag <= 0){ beep(120,0.06,"square",0.05); return; }
 
-    if(mag <= 0){
-      beep(120, 0.05, "square", 0.05);
-      tip("Empty. Reload (R).", 900);
-      return;
-    }
+    ensureAudio(); // ensures sounds work right after user interaction
 
     mag--;
     shots++;
     updateAmmoUI();
 
-    // recoil + camera shake
     applyRecoilKick();
     cam.shakeX += (Math.random()*2-1) * SHAKE_ON_SHOT * DPR;
     cam.shakeY += (Math.random()*2-1) * SHAKE_ON_SHOT * DPR;
 
     const now = performance.now();
-    const aimW = getAimedWorldWithAssist();
+    const aimW = getAimWorld();
 
     const range = dist(aimW.x, aimW.y, cam.x, cam.y);
     const tof = calcTof(range);
@@ -611,31 +619,15 @@
 
     bullets.push({ t0: now, tof, aimW:{...aimW}, impactW, alive:true });
 
-    // MW-ish gun pop (subtle)
-    beep(920, 0.03, "square", 0.05);
-    beep(240, 0.04, "sine", 0.03);
-  }
-
-  function activateUAV(now){
-    uavActiveUntil = now + UAV_DURATION_MS;
-    uavNextPingAt = now;              // immediate first ping
-    uavPingFlashUntil = now + UAV_PING_FLASH_MS;
-    uavAnnounceUntil = now + 1200;
-
-    tip(`<b>UAV ONLINE</b> — objective pings incoming.`, 1400);
-    beep(650, 0.08, "sine", 0.05);
-    beep(980, 0.07, "sine", 0.04);
+    gunShot();
   }
 
   function resolveBullet(b){
     let best=null, bestD=Infinity;
-
     for(const c of chars){
       if(!c.alive) continue;
       const d = dist(b.impactW.x, b.impactW.y, c.x, c.y);
-      if(d < HIT_RADIUS && d < bestD){
-        best=c; bestD=d;
-      }
+      if(d < HIT_RADIUS && d < bestD){ best=c; bestD=d; }
     }
 
     if(best){
@@ -643,61 +635,39 @@
       kills++;
       streak++;
 
-      // UAV trigger exactly at streak 4 (once per streak run)
       const now = performance.now();
       if(streak >= UAV_STREAK_REQ && uavArmed){
         activateUAV(now);
-        uavArmed = false; // disarm until streak resets
+        uavArmed=false;
       }
 
       const headshot = (b.impactW.y < best.y - 10);
-      const base = 100;
-      const hsBonus = headshot ? 75 : 0;
-      const streakBonus = Math.min(80, streak*8);
-      const earned = base + hsBonus + streakBonus;
-
+      const earned = 100 + (headshot ? 75 : 0) + Math.min(80, streak*8);
       points += earned;
-
-      const range = Math.round(dist(best.x, best.y, cam.x, cam.y));
       hitMarkerUntil = performance.now() + 140;
 
-      showBanner(headshot ? "HEADSHOT" : "TARGET DOWN", `+${earned}  •  ${range}m`, 950);
+      const r = Math.round(dist(best.x, best.y, cam.x, cam.y));
+      showBanner(headshot ? "HEADSHOT" : "TARGET DOWN", `+${earned}  •  ${r}m`, 950);
       beep(1100, 0.05, "sine", 0.05);
 
       const tgtId=currentTargetId();
       if(tgtId !== null && best.id === tgtId){
         points += 150;
-        tip(`Objective eliminated: <b>${best.icon.name}</b> (+150)`, 1300);
         currentTargetIndex++;
         if(currentTargetIndex >= roundTargets.length){
-          tip(`<b>Round clear.</b>`, 1400);
           startNextRound();
         } else {
           updateObjectiveUI();
         }
       }
     } else {
-      if(streak > 0) tip("Miss. Streak reset.", 950);
-      streak = 0;
-      uavArmed = true; // re-arm UAV for next streak run
+      streak=0;
+      uavArmed=true;
       beep(180, 0.06, "square", 0.04);
     }
   }
 
-  // Wind
-  function updateWind(now){
-    wind.dir += Math.sin(now*0.00012) * 0.0007;
-    if(!gust.active && Math.random() < 0.0016){
-      gust.active=true;
-      gust.extra=rand(1.5,4.2);
-      gust.until=now + rand(900,1800);
-    }
-    if(gust.active && now >= gust.until){
-      gust.active=false; gust.extra=0;
-    }
-  }
-
-  // Background
+  // ===== Visuals =====
   function drawBackground(){
     ctx.clearRect(0,0,W,H);
     const g = ctx.createRadialGradient(W*0.34,H*0.28, 10, W*0.34,H*0.28, Math.max(W,H)*0.92);
@@ -718,31 +688,8 @@
       ctx.fill();
     }
     ctx.restore();
-
-    // very subtle grid
-    ctx.save();
-    ctx.globalAlpha=0.05;
-    ctx.strokeStyle='rgba(255,255,255,1)';
-    ctx.lineWidth=1*DPR;
-    const grid=160;
-    const tl = screenToWorld(0,0);
-    const br = screenToWorld(W,H);
-    const startX = Math.floor(tl.x/grid)*grid;
-    const endX = Math.ceil(br.x/grid)*grid;
-    const startY = Math.floor(tl.y/grid)*grid;
-    const endY = Math.ceil(br.y/grid)*grid;
-    for(let x=startX;x<=endX;x+=grid){
-      const a=worldToScreen(x,startY), b=worldToScreen(x,endY);
-      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-    }
-    for(let y=startY;y<=endY;y+=grid){
-      const a=worldToScreen(startX,y), b=worldToScreen(endX,y);
-      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-    }
-    ctx.restore();
   }
 
-  // Characters
   function updateAndDrawChars(now, aimW){
     let lock=null, lockD=1e9;
     const tgtId=currentTargetId();
@@ -758,20 +705,15 @@
       c.y=clamp(c.y,80,WORLD_H-80);
 
       const d = dist(aimW.x, aimW.y, c.x, c.y);
-      const wantDance = (scoped && d < DANCE_RADIUS) ? 1 : 0;
+      const wantDance = (d < DANCE_RADIUS) ? 1 : 0;
       c.dance += (wantDance - c.dance) * 0.20;
 
       const phase = (now*0.007 + c.seed) % (Math.PI*2);
       const wig = c.dance * 6.5;
-      const dx = Math.sin(phase*3.0) * wig;
-      const dy = Math.cos(phase*2.2) * wig;
+      const px = c.x + Math.sin(phase*3.0)*wig;
+      const py = c.y + Math.cos(phase*2.2)*wig;
 
-      const px = c.x + dx;
-      const py = c.y + dy;
-
-      if(scoped && d < DANCE_RADIUS && d < lockD){
-        lock=c; lockD=d;
-      }
+      if(d < DANCE_RADIUS && d < lockD){ lock=c; lockD=d; }
 
       const p = worldToScreen(px, py);
       const size = CHAR_SIZE * c.scale * DPR * (0.88 + 0.12*zoom);
@@ -812,13 +754,13 @@
         ctx.stroke();
       }
 
-      // objective ping only when not ADS (MW)
-      if(tgtId !== null && c.id === tgtId){
-        ctx.globalAlpha = scoped ? 0.0 : 0.22;
+      // tiny objective cue only when UAV ping flashes (otherwise MW clean)
+      if(tgtId !== null && c.id === tgtId && performance.now() <= uavPingFlashUntil && performance.now() <= uavActiveUntil){
+        ctx.globalAlpha = 0.60;
         ctx.strokeStyle = 'rgba(255,210,90,0.95)';
-        ctx.lineWidth = 2.1*DPR;
+        ctx.lineWidth = 2.0*DPR;
         ctx.beginPath();
-        ctx.arc(0,0, size*2.35, 0, Math.PI*2);
+        ctx.arc(0,0, size*2.45, 0, Math.PI*2);
         ctx.stroke();
       }
 
@@ -827,7 +769,6 @@
     return lock;
   }
 
-  // Bullets
   function drawBullets(now){
     for(const b of bullets){
       if(!b.alive) continue;
@@ -858,60 +799,23 @@
     for(let i=bullets.length-1;i>=0;i--) if(!bullets[i].alive) bullets.splice(i,1);
   }
 
-  // Vision post
-  function applyVisionPost(){
-    const mode = visionModes[visionIndex];
-    if(mode==="Normal") return;
-
-    ctx.save();
-    ctx.globalCompositeOperation='source-atop';
-
-    if(mode==="Night Vision"){
-      ctx.globalAlpha=0.20;
-      ctx.fillStyle='rgb(40,255,120)';
-      ctx.fillRect(0,0,W,H);
-      ctx.globalAlpha=0.10;
-      ctx.fillStyle='rgba(0,0,0,0.65)';
-      for(let y=0;y<H;y+=6*DPR) ctx.fillRect(0,y,W,1*DPR);
-    }
-
-    if(mode==="Thermal"){
-      ctx.globalAlpha=0.12;
-      ctx.fillStyle='rgb(255,120,30)';
-      ctx.fillRect(0,0,W,H);
-      ctx.globalAlpha=0.18;
-      const g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.18,W/2,H/2,Math.min(W,H)*0.72);
-      g.addColorStop(0,'rgba(0,0,0,0)');
-      g.addColorStop(1,'rgba(0,0,0,0.65)');
-      ctx.fillStyle=g;
-      ctx.fillRect(0,0,W,H);
-    }
-
-    ctx.restore();
-  }
-
-  // UAV drawing (ping objective target)
   function drawUAV(now){
     if(now > uavActiveUntil) return;
 
-    // ping cadence
     if(now >= uavNextPingAt){
       uavPingFlashUntil = now + UAV_PING_FLASH_MS;
       uavNextPingAt = now + UAV_PING_EVERY_MS;
-      // tiny ping sound
       beep(740, 0.03, "sine", 0.03);
     }
 
-    // objective target position
     const id = currentTargetId();
     const t = (id===null) ? null : chars.find(c=>c.id===id && c.alive);
     if(!t) return;
 
     const p = worldToScreen(t.x, t.y);
-
     const flash = now <= uavPingFlashUntil;
 
-    // announce text near top-center briefly
+    // top-center UAV message briefly
     if(now <= uavAnnounceUntil){
       ctx.save();
       ctx.globalAlpha = 0.92;
@@ -928,7 +832,6 @@
       ctx.restore();
     }
 
-    // draw ping (on-screen) or direction indicator (off-screen)
     const onScreen = (p.x >= 0 && p.x <= W && p.y >= 0 && p.y <= H);
 
     ctx.save();
@@ -949,20 +852,16 @@
       ctx.arc(p.x, p.y, 3.0*DPR, 0, Math.PI*2);
       ctx.fill();
     } else {
-      // Direction indicator to target
       const cx = W/2, cy = H/2;
-      const vx = p.x - cx;
-      const vy = p.y - cy;
+      const vx = p.x - cx, vy = p.y - cy;
       const ang = Math.atan2(vy, vx);
 
-      // place arrow on screen edge
       const pad = UAV_OFFSCREEN_EDGE_PAD * DPR;
       const ex = clamp(cx + Math.cos(ang)*(Math.min(cx,cy)-pad), pad, W-pad);
       const ey = clamp(cy + Math.sin(ang)*(Math.min(cx,cy)-pad), pad, H-pad);
 
       ctx.translate(ex, ey);
       ctx.rotate(ang);
-
       ctx.globalAlpha = flash ? 0.92 : 0.40;
       ctx.fillStyle = 'rgba(255,210,90,1)';
       ctx.beginPath();
@@ -972,38 +871,25 @@
       ctx.lineTo(-10*DPR, 8*DPR);
       ctx.closePath();
       ctx.fill();
-
-      ctx.globalAlpha = flash ? 0.55 : 0.20;
-      ctx.strokeStyle = 'rgba(255,210,90,1)';
-      ctx.lineWidth = 2*DPR;
-      ctx.beginPath();
-      ctx.arc(0,0, 14*DPR, -0.6, 0.6);
-      ctx.stroke();
     }
 
     ctx.restore();
   }
 
-  // Overlay / reticle + hitmarker (uses recoil too)
-  function drawOverlay(now, lock){
-    const cx = cursor.x + recoil.x * DPR;
-    const cy = cursor.y + recoil.y * DPR;
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
 
-    if(!scoped){
-      ctx.save();
-      ctx.globalAlpha=0.75;
-      ctx.strokeStyle='rgba(235,240,255,0.70)';
-      ctx.lineWidth=2.0*DPR;
-      const L=14*DPR, G=6*DPR;
-      ctx.beginPath();
-      ctx.moveTo(cx-L, cy); ctx.lineTo(cx-G, cy);
-      ctx.moveTo(cx+G, cy); ctx.lineTo(cx+L, cy);
-      ctx.moveTo(cx, cy-L); ctx.lineTo(cx, cy-G);
-      ctx.moveTo(cx, cy+G); ctx.lineTo(cx, cy+L);
-      ctx.stroke();
-      ctx.restore();
-      return;
-    }
+  // Scope overlay (always on)
+  function drawScopeOverlay(lock){
+    const cx = cross.x + recoil.x * DPR;
+    const cy = cross.y + recoil.y * DPR;
 
     const r = (210 / Math.sqrt(zoom)) * DPR;
 
@@ -1060,17 +946,20 @@
     ctx.restore();
   }
 
-  function roundRect(x,y,w,h,r){
-    ctx.beginPath();
-    ctx.moveTo(x+r,y);
-    ctx.arcTo(x+w,y,x+w,y+h,r);
-    ctx.arcTo(x+w,y+h,x,y+h,r);
-    ctx.arcTo(x,y+h,x,y,r);
-    ctx.arcTo(x,y,x+w,y,r);
-    ctx.closePath();
+  // ===== Wind =====
+  function updateWind(now){
+    wind.dir += Math.sin(now*0.00012) * 0.0007;
+    if(!gust.active && Math.random() < 0.0016){
+      gust.active=true;
+      gust.extra=rand(1.5,4.2);
+      gust.until=now + rand(900,1800);
+    }
+    if(gust.active && now >= gust.until){
+      gust.active=false; gust.extra=0;
+    }
   }
 
-  // Round control
+  // ===== Round control =====
   function startNextRound(){
     round++;
     roundTxt.textContent = String(round);
@@ -1085,11 +974,9 @@
 
     buildRoundTargets();
     updateAmmoUI();
-
-    tip(`<b>Round ${round}</b> — new objectives.`, 1300);
   }
 
-  function resetRound(){
+  function resetAll(){
     round=1;
     timeLeft=ROUND_TIME_S;
 
@@ -1101,16 +988,14 @@
     wind.dir = Math.random()*Math.PI*2;
     gust.active=false; gust.extra=0;
 
-    scoped=false;
-    zoom=ZOOM_OFF; zoomTarget=ZOOM_OFF;
+    zoom=ZOOM_START;
+    zoomTarget=ZOOM_START;
 
     bullets.length=0;
 
-    // recoil reset
     recoil.x=0; recoil.y=0; recoil.vx=0; recoil.vy=0;
     recoilStep=0;
 
-    // UAV reset
     uavActiveUntil=0; uavNextPingAt=0; uavPingFlashUntil=0; uavAnnounceUntil=0;
     uavArmed=true;
 
@@ -1118,19 +1003,152 @@
     buildRoundTargets();
     updateAmmoUI();
 
-    adsTxt.textContent="ADS: OFF";
     roundTxt.textContent="1";
-
-    tip("Reset.", 900);
   }
 
-  // MAIN LOOP
+  // ===== Touch: pinch zoom + two-finger reload =====
+  function touchDist(t1, t2){
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
+    return Math.hypot(dx,dy);
+  }
+
+  canvas.addEventListener('touchstart', (e)=>{
+    ensureAudio(); // allow sound unlock
+    if(e.touches.length === 2){
+      // two-finger tap -> reload (quick)
+      // but if it becomes a pinch, we treat as pinch. We'll still allow reload if short.
+      pinching = true;
+      pinchStartDist = touchDist(e.touches[0], e.touches[1]);
+      pinchStartZoom = zoomTarget;
+      // small tick to confirm pinch mode
+      clickTick(420, 0.03, 0.04);
+    }
+  }, { passive:false });
+
+  canvas.addEventListener('touchmove', (e)=>{
+    if(!pinching) return;
+    if(e.touches.length !== 2) return;
+
+    const d = touchDist(e.touches[0], e.touches[1]);
+    const ratio = d / Math.max(10, pinchStartDist);
+
+    // Smooth zoom mapping
+    let z = pinchStartZoom * ratio;
+    z = clamp(z, ZOOM_MIN, ZOOM_MAX);
+
+    // zoom tick sound when passing thresholds
+    const now = performance.now();
+    const step = 0.12; // tick frequency
+    const prevQ = Math.round(zoomTarget/step);
+    const nextQ = Math.round(z/step);
+    if(prevQ !== nextQ && now - lastZoomTickAt > 35){
+      // higher pitch when zooming in, lower when zooming out
+      const pitch = (z > zoomTarget) ? 720 : 440;
+      clickTick(pitch, 0.02, 0.04);
+      lastZoomTickAt = now;
+    }
+
+    zoomTarget = z;
+    e.preventDefault();
+  }, { passive:false });
+
+  canvas.addEventListener('touchend', (e)=>{
+    // if pinch ended quickly and minimal change, treat as reload shortcut
+    if(pinching){
+      const zDelta = Math.abs(zoomTarget - pinchStartZoom);
+      if(zDelta < 0.10){
+        reload();
+      }
+    }
+    if(e.touches.length < 2){
+      pinching=false;
+    }
+  }, { passive:false });
+
+  // ===== Shoot button =====
+  shootBtn.addEventListener('pointerdown', (e)=>{
+    ensureAudio();
+    shoot();
+    e.preventDefault();
+  }, { passive:false });
+
+  // ===== Tilt permissions + listeners =====
+  function isIOS(){
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  async function requestTiltPermissionIfNeeded(){
+    // On iOS 13+, need DeviceOrientationEvent.requestPermission()
+    if(typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function"){
+      permWrap.style.display = "flex";
+    } else {
+      // Android / others typically just work
+      enableTilt();
+    }
+  }
+
+  async function enableTilt(){
+    try{
+      if(typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function"){
+        const res = await DeviceOrientationEvent.requestPermission();
+        if(res !== "granted"){
+          permWrap.style.display = "none";
+          tilt.enabled=false;
+          modeTxt.textContent = "MODE: MOBILE (NO TILT)";
+          return;
+        }
+      }
+      tilt.enabled=true;
+      permWrap.style.display = "none";
+      modeTxt.textContent = "MODE: MOBILE (TILT)";
+      addEventListener('deviceorientation', onOri, true);
+      beep(520, 0.06, "sine", 0.05);
+    }catch{
+      permWrap.style.display = "none";
+      tilt.enabled=false;
+      modeTxt.textContent = "MODE: MOBILE (NO TILT)";
+    }
+  }
+
+  function onOri(ev){
+    // beta: front/back tilt (-180..180), gamma: left/right (-90..90)
+    const b = (typeof ev.beta === "number") ? ev.beta : 0;
+    const g = (typeof ev.gamma === "number") ? ev.gamma : 0;
+
+    // smooth
+    tilt.sb = lerp(tilt.sb, b, TILT_SMOOTH);
+    tilt.sg = lerp(tilt.sg, g, TILT_SMOOTH);
+    tilt.beta = tilt.sb;
+    tilt.gamma = tilt.sg;
+  }
+
+  enableTiltBtn.addEventListener('click', ()=>enableTilt());
+  noTiltBtn.addEventListener('click', ()=>{
+    permWrap.style.display="none";
+    tilt.enabled=false;
+    modeTxt.textContent="MODE: MOBILE (NO TILT)";
+  });
+
+  // ===== Main Loop =====
+  function roundRectPath(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
   let last = performance.now();
   function tick(now){
     const dt = Math.min(40, now-last);
     last = now;
 
-    // finish reload
+    updateCrossCenter();
+
+    // reload finish
     if(reloading && now >= reloadUntil){
       const need = MAG_SIZE - mag;
       const take = Math.min(need, reserve);
@@ -1139,15 +1157,12 @@
       reloading=false;
       updateAmmoUI();
       beep(520, 0.05, "sine", 0.04);
-      tip("Reload complete.", 900);
     }
 
     // timer
     timeLeft -= dt/1000;
     if(timeLeft <= 0){
-      tip(`<b>Time.</b> Next round.`, 1200);
-      streak=0;
-      uavArmed=true;
+      streak=0; uavArmed=true;
       startNextRound();
     }
     timerTxt.textContent = `${Math.max(0,timeLeft).toFixed(1)}s`;
@@ -1158,54 +1173,47 @@
 
     // smooth zoom
     zoom += (zoomTarget - zoom) * ZOOM_SPEED;
+    zoomTxt.textContent = `${zoom.toFixed(1)}x`;
 
-    // recoil recovery (spring)
-    // pull recoil back toward 0, with damped velocity
-    const rx = recoil.x;
-    const ry = recoil.y;
-    recoil.vx += (-rx) * RECOIL_RETURN;
-    recoil.vy += (-ry) * RECOIL_RETURN;
-
+    // recoil recovery
+    recoil.vx += (-recoil.x) * RECOIL_RETURN;
+    recoil.vy += (-recoil.y) * RECOIL_RETURN;
     recoil.vx *= RECOIL_DAMP;
     recoil.vy *= RECOIL_DAMP;
-
     recoil.x += recoil.vx * (dt/16.67);
     recoil.y += recoil.vy * (dt/16.67);
-
-    // clamp recoil so it doesn't fly off
     recoil.x = clamp(recoil.x, -40, 40);
     recoil.y = clamp(recoil.y, -90, 40);
 
-    // aim (assist + recoil is already applied inside getAimedWorldWithAssist)
-    const aimW = getAimedWorldWithAssist();
+    // tilt -> camera aim drift
+    // We move camera by world units proportional to tilt * (1/zoom) so it feels consistent.
+    if(tilt.enabled){
+      const gx = deadzone(tilt.gamma);
+      const by = deadzone(tilt.beta);
 
-    // MW sway (reduced when holding breath)
-    const swayScale = holdBreath ? 0.35 : 1.0;
-    const swayX = Math.sin(now*SWAY_SPEED) * SWAY_MAG * swayScale;
-    const swayY = Math.cos(now*SWAY_SPEED*0.9) * SWAY_MAG * swayScale;
-    aimW.x += swayX;
-    aimW.y += swayY;
+      // Convert degrees to world drift (scale with zoom so it doesn’t feel too fast when zoomed in)
+      const scale = (1.0 / zoom) * 9.0; // world-units per degree
+      cam.x += gx * TILT_SENS_X * scale;
+      cam.y += by * TILT_SENS_Y * scale;
+    }
 
-    // camera follow
-    cam.x += (aimW.x - cam.x) * CAM_FOLLOW;
-    cam.y += (aimW.y - cam.y) * CAM_FOLLOW;
+    // clamp camera
     cam.x = clamp(cam.x, 200, WORLD_W-200);
     cam.y = clamp(cam.y, 200, WORLD_H-200);
 
-    // shake decay
+    // apply camera shake decay
     cam.shakeX *= SHAKE_DECAY;
     cam.shakeY *= SHAKE_DECAY;
+
+    // compute aim for dance/lock feedback
+    const aimW = getAimWorld();
 
     // draw
     drawBackground();
     const lock = updateAndDrawChars(now, aimW);
     drawBullets(now);
-    applyVisionPost();
     drawUAV(now);
-    drawOverlay(now, lock);
-
-    // range
-    rangeTxt.textContent = `${Math.round(dist(aimW.x, aimW.y, cam.x, cam.y))} m`;
+    drawScopeOverlay(lock);
 
     // UI
     pointsTxt.textContent = String(points);
@@ -1218,14 +1226,41 @@
     requestAnimationFrame(tick);
   }
 
-  // Init
+  // ===== Init =====
   function init(){
-    spawn();
-    buildRoundTargets();
-    updateAmmoUI();
-    tip(`MW controls: <b>Right-click ADS</b>, <b>Left-click shoot</b>, <b>R reload</b>, <b>Shift hold breath</b>.`, 2600);
-    tip(`Streak <b>${UAV_STREAK_REQ}</b>: <b>UAV ONLINE</b> (objective pings).`, 2200);
+    resetAll();
+    // show permission prompt on iOS, else enable tilt directly
+    requestTiltPermissionIfNeeded();
     requestAnimationFrame(tick);
+  }
+
+  // Desktop fallback: allow mouse wheel zoom + click shoot (if opened on laptop)
+  let isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  if(!isTouch){
+    modeTxt.textContent = "MODE: DESKTOP (MOUSE)";
+    shootBtn.style.display = "none";
+    canvas.addEventListener('mousemove', (e)=>{
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX-rect.left)*DPR;
+      const y = (e.clientY-rect.top)*DPR;
+      // move camera toward mouse aim
+      const w = screenToWorld(x,y);
+      cam.x += (w.x - cam.x) * CAM_FOLLOW;
+      cam.y += (w.y - cam.y) * CAM_FOLLOW;
+    }, { passive:true });
+
+    canvas.addEventListener('mousedown', ()=>{ ensureAudio(); shoot(); }, { passive:true });
+
+    canvas.addEventListener('wheel', (e)=>{
+      ensureAudio();
+      const z = clamp(zoomTarget + (e.deltaY>0 ? -0.18 : 0.18), ZOOM_MIN, ZOOM_MAX);
+      if(Math.abs(z-zoomTarget) > 0.01) clickTick(z>zoomTarget ? 720 : 440, 0.02, 0.04);
+      zoomTarget = z;
+      e.preventDefault();
+    }, { passive:false });
+  } else {
+    // mobile: two-finger short tap already reloads, but add hardware key support if present
+    addEventListener('keydown', (e)=>{ if(e.key.toLowerCase()==='r') reload(); });
   }
 
   init();
