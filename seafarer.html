@@ -1,0 +1,968 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Sea Farer</title>
+  <style>
+    :root{
+      --bg0:#070A12;
+      --bg1:#0B1024;
+      --ink:#EAF0FF;
+      --muted:#9FB2E7;
+      --accent:#7CF7C7;
+      --warn:#FFD56A;
+      --danger:#FF6A88;
+      --panel:rgba(12,18,40,.72);
+      --stroke:rgba(180,200,255,.18);
+    }
+    html,body{height:100%; margin:0; background: radial-gradient(1200px 900px at 20% 15%, #121A3B 0%, var(--bg0) 55%, #04050B 100%); color:var(--ink); font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;}
+    *{box-sizing:border-box; touch-action:none;}
+    #wrap{height:100%; display:flex; flex-direction:column;}
+    header{
+      padding:10px 12px;
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      border-bottom:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(10,14,30,.85), rgba(10,14,30,.35));
+      backdrop-filter: blur(8px);
+    }
+    header .left{display:flex; gap:10px; align-items:center; min-width:0;}
+    .badge{
+      padding:6px 10px; border:1px solid var(--stroke); border-radius:999px;
+      background:rgba(0,0,0,.25);
+      font-weight:700; letter-spacing:.4px;
+      display:flex; gap:8px; align-items:center;
+      white-space:nowrap;
+    }
+    .badge small{font-weight:600; color:var(--muted);}
+    .title{
+      display:flex; flex-direction:column; line-height:1.1; min-width:0;
+    }
+    .title b{font-size:14px; letter-spacing:.4px;}
+    .title span{font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    .right{display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;}
+    button{
+      border:1px solid var(--stroke); background:rgba(12,18,40,.55);
+      color:var(--ink); padding:8px 10px; border-radius:12px;
+      font-weight:700; cursor:pointer;
+    }
+    button:active{transform:translateY(1px);}
+    #hud{
+      position:relative;
+      display:flex; gap:10px; align-items:stretch;
+      padding:10px 12px;
+    }
+    #panel{
+      flex:1;
+      border:1px solid var(--stroke);
+      background:var(--panel);
+      border-radius:16px;
+      padding:10px;
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:10px;
+      max-width:1100px;
+      margin:0 auto;
+      width:100%;
+    }
+    .card{
+      border:1px solid var(--stroke);
+      background:rgba(0,0,0,.22);
+      border-radius:14px;
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      min-height:84px;
+    }
+    .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+    .row .k{color:var(--muted); font-weight:700;}
+    .row .v{font-weight:800;}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
+    .hint{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.35;
+    }
+    .hint b{color:var(--accent);}
+    #stage{
+      position:relative;
+      flex:1;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:12px;
+      overflow:hidden;
+    }
+    #game{
+      width:min(1100px, 96vw);
+      height:min(680px, 62vh);
+      border-radius:18px;
+      border:1px solid var(--stroke);
+      background: radial-gradient(1100px 700px at 25% 30%, rgba(120,160,255,.12), rgba(0,0,0,.08)) , rgba(0,0,0,.22);
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+      position:relative;
+    }
+    canvas{
+      width:100%;
+      height:100%;
+      display:block;
+      border-radius:18px;
+    }
+    #overlayHelp{
+      position:absolute; inset:14px;
+      pointer-events:none;
+      display:flex;
+      justify-content:flex-end;
+      align-items:flex-start;
+      gap:10px;
+    }
+    .toast{
+      pointer-events:none;
+      background:rgba(0,0,0,.45);
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      padding:10px 12px;
+      max-width:360px;
+      font-size:12px;
+      color:var(--muted);
+      backdrop-filter: blur(8px);
+    }
+    .toast b{color:var(--ink);}
+    #footer{
+      padding:10px 12px;
+      color:var(--muted);
+      font-size:12px;
+      text-align:center;
+      border-top:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(10,14,30,.12), rgba(10,14,30,.55));
+    }
+    a{color:var(--accent); text-decoration:none;}
+  </style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <div class="left">
+      <div class="badge">SEA FARER <small>coord + compass</small></div>
+      <div class="title">
+        <b>Balance the swell. Hunt the target.</b>
+        <span>Hold one finger to stabilize → drag the magnifier with the other hand to search the grid.</span>
+      </div>
+    </div>
+    <div class="right">
+      <button id="btnNew">New Target</button>
+      <button id="btnHard">Harder</button>
+      <button id="btnReset">Reset View</button>
+    </div>
+  </header>
+
+  <div id="hud">
+    <div id="panel">
+      <div class="card">
+        <div class="row">
+          <div class="k">Target Coordinates</div>
+          <div class="v mono" id="targetCoord">—</div>
+        </div>
+        <div class="row">
+          <div class="k">Target Name</div>
+          <div class="v" id="targetName">—</div>
+        </div>
+        <div class="row">
+          <div class="k">Bearing Guide</div>
+          <div class="v mono" id="bearing">—</div>
+        </div>
+        <div class="hint">
+          Geography skill: read <b>grid coordinates</b> (X,Y), then use the <b>compass</b> and landmarks.
+          Tip: the map is “windy” — keep your stabilizing finger near the center to reduce shake.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <div class="k">Wind Speed</div>
+          <div class="v mono" id="wind">—</div>
+        </div>
+        <div class="row">
+          <div class="k">Stability</div>
+          <div class="v mono" id="stability">—</div>
+        </div>
+        <div class="row">
+          <div class="k">Magnifier</div>
+          <div class="v mono" id="magInfo">—</div>
+        </div>
+        <div class="hint">
+          Controls:
+          <b>Touch/Mouse</b>: Hold to stabilize • Drag magnifier handle to move lens • Pinch not required.
+          <br/>
+          Find the target and tap/click it to score.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="stage">
+    <div id="game">
+      <canvas id="c"></canvas>
+      <div id="overlayHelp">
+        <div class="toast">
+          <b>Mission:</b> Find the striped traveler (original character) at the given coordinates.
+          <br/><br/>
+          <b>Pro tip:</b> On “Harder”, the target’s colors blend with the crowd (hue shift + smaller scale).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer">
+    Educational note: “knots” = nautical miles per hour. Compass bearings are degrees (0°=N, 90°=E, 180°=S, 270°=W).
+  </div>
+</div>
+
+<script>
+(() => {
+  // ===== Canvas setup =====
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.floor(rect.width * DPR);
+    canvas.height = Math.floor(rect.height * DPR);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ===== UI =====
+  const ui = {
+    targetCoord: document.getElementById('targetCoord'),
+    targetName: document.getElementById('targetName'),
+    bearing: document.getElementById('bearing'),
+    wind: document.getElementById('wind'),
+    stability: document.getElementById('stability'),
+    magInfo: document.getElementById('magInfo'),
+    btnNew: document.getElementById('btnNew'),
+    btnHard: document.getElementById('btnHard'),
+    btnReset: document.getElementById('btnReset'),
+  };
+
+  // ===== Game state =====
+  const rng = (seed => () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296)(Date.now() >>> 0);
+
+  const state = {
+    gridSize: 60, // coordinate grid resolution (higher = denser coords)
+    worldW: 2400,
+    worldH: 1600,
+    viewX: 0,
+    viewY: 0,
+    zoom: 1.0,
+    baseZoom: 1.0,
+
+    // wind / shake
+    windKnots: 14,
+    shakeAmp: 8,
+    shakeT: 0,
+    stabilizing: false,
+    stabilizeX: 0,
+    stabilizeY: 0,
+    stabilizeStrength: 0,
+
+    // magnifier
+    magX: 0,
+    magY: 0,
+    magR: 90,
+    magZoom: 2.6,
+    draggingMag: false,
+
+    // difficulty
+    hard: false,
+
+    // characters
+    chars: [],
+    targetIndex: -1,
+    score: 0,
+  };
+
+  // ===== Helpers =====
+  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function dist(ax,ay,bx,by){ return Math.hypot(ax-bx, ay-by); }
+
+  function bearingDeg(fromX, fromY, toX, toY){
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    // screen coords: y down. For compass, invert dy.
+    const ang = Math.atan2(dx, -dy); // 0=north
+    let deg = ang * 180 / Math.PI;
+    if (deg < 0) deg += 360;
+    return deg;
+  }
+
+  function worldToScreen(wx, wy){
+    // viewX/viewY is top-left of camera in world space
+    const sx = (wx - state.viewX) * state.zoom;
+    const sy = (wy - state.viewY) * state.zoom;
+    return {sx, sy};
+  }
+  function screenToWorld(sx, sy){
+    const wx = sx / state.zoom + state.viewX;
+    const wy = sy / state.zoom + state.viewY;
+    return {wx, wy};
+  }
+
+  function getCanvasPoint(e){
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * DPR;
+    const y = (e.clientY - rect.top) * DPR;
+    return {x,y};
+  }
+
+  // ===== Character generator (original “era vibes”, but not IP) =====
+  const archetypes = [
+    {name:"Spiky Fighter",    palette:["#ff6a88","#ffd56a","#7cf7c7","#7aa7ff"]},
+    {name:"Pocket Beast",     palette:["#7cf7c7","#ffd56a","#ff8be3","#7aa7ff"]},
+    {name:"Ocean Spongey",    palette:["#ffd56a","#7aa7ff","#ff6a88","#7cf7c7"]},
+    {name:"Ninja Kid",        palette:["#7aa7ff","#9bfffe","#ffd56a","#ff6a88"]},
+    {name:"Retro Robot",      palette:["#9fb2e7","#7cf7c7","#ffd56a","#ff6a88"]},
+    {name:"Desert Ranger",    palette:["#ffd56a","#caa46a","#7aa7ff","#7cf7c7"]},
+    {name:"Sky Pirate",       palette:["#7aa7ff","#ff6a88","#ffd56a","#9fb2e7"]},
+    {name:"Mystic Mage",      palette:["#b790ff","#7aa7ff","#ffd56a","#7cf7c7"]},
+    {name:"Blocky Knight",    palette:["#9fb2e7","#c0d0ff","#ffd56a","#7cf7c7"]},
+    {name:"Alien Tourist",    palette:["#7cf7c7","#58ff9b","#7aa7ff","#ffd56a"]},
+  ];
+
+  function pick(arr){ return arr[(rng()*arr.length)|0]; }
+
+  function makeChar(i){
+    const t = pick(archetypes);
+    const wx = rng() * state.worldW;
+    const wy = rng() * state.worldH;
+
+    // Make them "smaller": base size
+    const base = state.hard ? lerp(10, 18, rng()) : lerp(14, 26, rng());
+    const hueShift = state.hard ? lerp(-20, 20, rng()) : 0;
+
+    return {
+      id: i,
+      type: t.name,
+      x: wx,
+      y: wy,
+      s: base,
+      // look
+      c1: t.palette[0],
+      c2: t.palette[1],
+      c3: t.palette[2],
+      c4: t.palette[3],
+      hueShift,
+      // bits
+      seed: (rng()*1e9)|0,
+      // click hit radius in world units
+      hit: base*0.9,
+      // special flag for target
+      isTarget: false,
+      // pattern
+      pattern: rng() < 0.15 ? "stripes" : (rng() < 0.2 ? "checker" : "solid"),
+    };
+  }
+
+  // “Striped traveler” target: still original
+  function makeTargetChar(i){
+    const c = makeChar(i);
+    c.type = "Striped Traveler";
+    c.pattern = "targetStripes";
+    c.c1 = "#ff6a88";
+    c.c2 = "#f4f7ff";
+    c.c3 = "#7aa7ff";
+    c.c4 = "#ffd56a";
+    c.isTarget = true;
+
+    // On hard, blend it: hue shift & lower contrast
+    if(state.hard){
+      c.c1 = "#e36a7c";
+      c.c2 = "#f0e8f2";
+      c.c3 = "#84a0e8";
+      c.c4 = "#e8c46f";
+      c.s *= 0.92;
+      c.hit *= 0.9;
+    }
+    return c;
+  }
+
+  function rebuildCharacters(extra=0){
+    const baseCount = 110; // "up to 100" requested; we go a bit over for chaos
+    const total = baseCount + (state.hard ? 30 : 0) + extra; // add 30 more on hard by default
+    state.chars = [];
+    for(let i=0;i<total;i++) state.chars.push(makeChar(i));
+    pickNewTarget();
+  }
+
+  // ===== Target selection + coordinate conversion =====
+  function worldToGrid(wx, wy){
+    // grid coordinates from 0..gridSize
+    const gx = Math.round((wx / state.worldW) * state.gridSize);
+    const gy = Math.round((wy / state.worldH) * state.gridSize);
+    return {gx, gy};
+  }
+
+  function pickNewTarget(){
+    // pick random index, replace with target char
+    const idx = (rng() * state.chars.length) | 0;
+    state.targetIndex = idx;
+    state.chars[idx] = makeTargetChar(idx);
+
+    const t = state.chars[idx];
+    const {gx, gy} = worldToGrid(t.x, t.y);
+
+    ui.targetCoord.textContent = `X:${String(gx).padStart(2,'0')}  Y:${String(gy).padStart(2,'0')}`;
+    ui.targetName.textContent = state.hard ? "??? (blended)" : t.type;
+
+    // bearing from center of world
+    const cx = state.worldW/2, cy = state.worldH/2;
+    const b = bearingDeg(cx, cy, t.x, t.y);
+    ui.bearing.textContent = `${b.toFixed(0)}° (from map center)`;
+  }
+
+  // ===== Wind + shake =====
+  function setWind(knots){
+    state.windKnots = knots;
+    // shake amplitude scales with wind
+    state.shakeAmp = clamp(knots * (state.hard ? 0.8 : 0.65), 6, 26);
+    ui.wind.textContent = `${knots.toFixed(0)} kn`;
+  }
+
+  function randomizeWind(){
+    // 6..32 knots
+    setWind(lerp(6, 32, rng()));
+  }
+
+  // ===== View reset =====
+  function resetView(){
+    state.zoom = state.baseZoom = 0.55; // show more "galaxy"
+    state.viewX = (state.worldW - (canvas.width / DPR) / state.zoom) / 2;
+    state.viewY = (state.worldH - (canvas.height / DPR) / state.zoom) / 2;
+
+    // magnifier starts near center
+    state.magX = (canvas.width*0.5);
+    state.magY = (canvas.height*0.55);
+    state.magR = Math.max(80, Math.min(120, (canvas.width/10)));
+    state.magZoom = state.hard ? 3.1 : 2.7;
+  }
+
+  // ===== Drawing: background (sea galaxy), grid, compass =====
+  function drawBackground(){
+    const w = canvas.width, h = canvas.height;
+    ctx.save();
+    // subtle star specks
+    for(let i=0;i<120;i++){
+      const x = (rng()*w)|0;
+      const y = (rng()*h)|0;
+      const a = rng()*0.35;
+      ctx.fillStyle = `rgba(220,240,255,${a})`;
+      ctx.fillRect(x,y,1,1);
+    }
+    ctx.restore();
+  }
+
+  function drawGrid(){
+    const w = canvas.width, h = canvas.height;
+
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = "rgba(180,200,255,.35)";
+    ctx.lineWidth = 1;
+
+    // grid step in screen pixels based on world->screen conversion
+    const stepWorldX = state.worldW / state.gridSize;
+    const stepWorldY = state.worldH / state.gridSize;
+
+    // determine visible world bounds
+    const topLeft = screenToWorld(0,0);
+    const botRight = screenToWorld(w/DPR, h/DPR);
+
+    const startGX = Math.floor(topLeft.wx / stepWorldX);
+    const endGX   = Math.ceil(botRight.wx / stepWorldX);
+    const startGY = Math.floor(topLeft.wy / stepWorldY);
+    const endGY   = Math.ceil(botRight.wy / stepWorldY);
+
+    for(let gx=startGX; gx<=endGX; gx++){
+      const xw = gx * stepWorldX;
+      const {sx} = worldToScreen(xw, topLeft.wy);
+      const xs = sx * DPR;
+      ctx.beginPath();
+      ctx.moveTo(xs, 0);
+      ctx.lineTo(xs, h);
+      ctx.stroke();
+    }
+    for(let gy=startGY; gy<=endGY; gy++){
+      const yw = gy * stepWorldY;
+      const {sy} = worldToScreen(topLeft.wx, yw);
+      const ys = sy * DPR;
+      ctx.beginPath();
+      ctx.moveTo(0, ys);
+      ctx.lineTo(w, ys);
+      ctx.stroke();
+    }
+
+    // axis labels (sparse)
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = "rgba(235,242,255,.75)";
+    ctx.font = `${12*DPR}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`;
+
+    for(let gx=startGX; gx<=endGX; gx+=4){
+      const xw = gx * stepWorldX;
+      const {sx} = worldToScreen(xw, topLeft.wy);
+      const xs = sx * DPR;
+      if(xs>=0 && xs<=w){
+        ctx.fillText(`X${gx}`, xs+4*DPR, 16*DPR);
+      }
+    }
+    for(let gy=startGY; gy<=endGY; gy+=4){
+      const yw = gy * stepWorldY;
+      const {sy} = worldToScreen(topLeft.wx, yw);
+      const ys = sy * DPR;
+      if(ys>=0 && ys<=h){
+        ctx.fillText(`Y${gy}`, 4*DPR, ys-4*DPR);
+      }
+    }
+
+    ctx.restore();
+  }
+
+  function drawCompass(){
+    // top-right compass rose
+    const w = canvas.width, pad = 16*DPR;
+    const cx = w - 86*DPR;
+    const cy = 74*DPR;
+    const r  = 46*DPR;
+
+    ctx.save();
+    ctx.globalAlpha = 0.95;
+
+    // base
+    ctx.fillStyle = "rgba(0,0,0,.35)";
+    ctx.strokeStyle = "rgba(180,200,255,.22)";
+    ctx.lineWidth = 2*DPR;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+
+    // needle points to wind direction (random-ish based on time)
+    const wd = (Math.sin(state.shakeT*0.4)*0.5 + 0.5) * 360;
+    const ang = (wd - 90) * Math.PI/180; // screen angle
+    const nx = cx + Math.cos(ang) * (r*0.72);
+    const ny = cy + Math.sin(ang) * (r*0.72);
+
+    ctx.strokeStyle = "rgba(124,247,199,.95)";
+    ctx.lineWidth = 3*DPR;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(nx, ny);
+    ctx.stroke();
+
+    // labels
+    ctx.fillStyle = "rgba(235,242,255,.85)";
+    ctx.font = `${12*DPR}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`;
+    ctx.fillText("N", cx-4*DPR, cy - r + 14*DPR);
+    ctx.fillText("E", cx + r - 14*DPR, cy+4*DPR);
+    ctx.fillText("S", cx-4*DPR, cy + r - 6*DPR);
+    ctx.fillText("W", cx - r + 8*DPR, cy+4*DPR);
+
+    // wind degrees
+    ctx.globalAlpha = 0.8;
+    ctx.fillText(`${wd.toFixed(0)}°`, cx - 16*DPR, cy + 6*DPR);
+
+    ctx.restore();
+  }
+
+  // ===== Character drawing (angular/voxel-ish minis) =====
+  function shadeHex(hex, amt){
+    // quick & dirty shade
+    let c = hex.replace("#","");
+    if(c.length===3) c = c.split("").map(ch=>ch+ch).join("");
+    const n = parseInt(c,16);
+    let r = (n>>16)&255, g=(n>>8)&255, b=n&255;
+    r = clamp(r+amt,0,255); g=clamp(g+amt,0,255); b=clamp(b+amt,0,255);
+    return `rgb(${r|0},${g|0},${b|0})`;
+  }
+
+  function drawVoxelDude(wx, wy, s, cA, cB, cC, pattern){
+    const {sx, sy} = worldToScreen(wx, wy);
+    const x = sx * DPR;
+    const y = sy * DPR;
+
+    // cull offscreen
+    const w = canvas.width, h = canvas.height;
+    const pad = 80*DPR;
+    if(x<-pad || y<-pad || x>w+pad || y>h+pad) return;
+
+    const scale = s * state.zoom * DPR;
+
+    // body parts are rectangles / trapezoids for angular feel
+    const head = scale * 0.9;
+    const bodyW = scale * 1.1;
+    const bodyH = scale * 1.15;
+    const limb = scale * 0.55;
+
+    // shadow
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = "rgba(0,0,0,.35)";
+    ctx.beginPath();
+    ctx.ellipse(x, y + bodyH*0.9, bodyW*0.7, bodyW*0.25, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // torso
+    ctx.fillStyle = cA;
+    ctx.fillRect(x - bodyW/2, y - bodyH/2, bodyW, bodyH);
+
+    // pattern overlay
+    if(pattern === "checker"){
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = shadeHex(cB, -18);
+      const step = Math.max(2, (bodyW/4)|0);
+      for(let yy=0; yy<bodyH; yy+=step){
+        for(let xx=0; xx<bodyW; xx+=step){
+          if(((xx/step + yy/step)|0) % 2 === 0){
+            ctx.fillRect(x - bodyW/2 + xx, y - bodyH/2 + yy, step, step);
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    } else if(pattern === "stripes" || pattern === "targetStripes"){
+      ctx.globalAlpha = pattern === "targetStripes" ? 0.95 : 0.65;
+      ctx.fillStyle = cB;
+      const step = Math.max(2, (bodyW/5)|0);
+      for(let xx=0; xx<bodyW; xx+=step*2){
+        ctx.fillRect(x - bodyW/2 + xx, y - bodyH/2, step, bodyH);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // head
+    ctx.fillStyle = cB;
+    ctx.fillRect(x - head/2, y - bodyH/2 - head*0.85, head, head);
+
+    // face pixels
+    ctx.fillStyle = "rgba(0,0,0,.55)";
+    const eye = Math.max(1, head*0.12);
+    ctx.fillRect(x - head*0.18, y - bodyH/2 - head*0.55, eye, eye);
+    ctx.fillRect(x + head*0.06, y - bodyH/2 - head*0.55, eye, eye);
+
+    // arms
+    ctx.fillStyle = cC;
+    ctx.fillRect(x - bodyW/2 - limb*0.9, y - bodyH/2 + limb*0.7, limb, limb*1.7);
+    ctx.fillRect(x + bodyW/2 - limb*0.1, y - bodyH/2 + limb*0.7, limb, limb*1.7);
+
+    // legs
+    ctx.fillStyle = shadeHex(cA, -14);
+    ctx.fillRect(x - bodyW/2 + limb*0.3, y + bodyH/2 - limb*0.2, limb, limb*1.6);
+    ctx.fillRect(x + bodyW/2 - limb*1.3, y + bodyH/2 - limb*0.2, limb, limb*1.6);
+
+    // tiny accessory
+    ctx.globalAlpha = 0.75;
+    ctx.fillStyle = shadeHex(cC, 24);
+    ctx.fillRect(x - bodyW/2, y - bodyH/2 + bodyH*0.35, bodyW, Math.max(1, bodyH*0.12));
+    ctx.globalAlpha = 1;
+  }
+
+  function drawCharacters(){
+    for(const ch of state.chars){
+      drawVoxelDude(ch.x, ch.y, ch.s, ch.c1, ch.c2, ch.c3, ch.pattern);
+    }
+  }
+
+  // ===== Magnifier (lens + zoomed inset) =====
+  function drawMagnifier(){
+    const w = canvas.width, h = canvas.height;
+    const mx = state.magX, my = state.magY;
+    const r = state.magR * DPR;
+
+    // lens border
+    ctx.save();
+    ctx.globalAlpha = 0.98;
+
+    // clip lens circle
+    ctx.beginPath();
+    ctx.arc(mx, my, r, 0, Math.PI*2);
+    ctx.clip();
+
+    // draw zoomed scene inside lens:
+    // We'll render a second pass of the world with higher zoom, centered around lens center in world space.
+    const lensWorld = screenToWorld(mx / DPR, my / DPR);
+
+    // compute temporary camera
+    const old = {vx:state.viewX, vy:state.viewY, z:state.zoom};
+    const lensZoom = old.z * state.magZoom;
+
+    // camera so that lensWorld is centered under the lens
+    const lensViewX = lensWorld.wx - (mx / DPR) / lensZoom;
+    const lensViewY = lensWorld.wy - (my / DPR) / lensZoom;
+
+    // temporarily set for lens draw
+    state.viewX = lensViewX;
+    state.viewY = lensViewY;
+    state.zoom = lensZoom;
+
+    // subtle lens tint
+    ctx.fillStyle = "rgba(10,22,55,.20)";
+    ctx.fillRect(mx-r, my-r, r*2, r*2);
+
+    // draw grid + characters in lens
+    drawGrid();
+    drawCharacters();
+
+    // restore camera
+    state.viewX = old.vx; state.viewY = old.vy; state.zoom = old.z;
+
+    // unclip
+    ctx.restore();
+
+    // lens ring
+    ctx.save();
+    ctx.strokeStyle = "rgba(245,250,255,.92)";
+    ctx.lineWidth = 3*DPR;
+    ctx.beginPath();
+    ctx.arc(mx, my, r, 0, Math.PI*2);
+    ctx.stroke();
+
+    // handle (drag point)
+    const hx = mx + r*0.78;
+    const hy = my + r*0.78;
+    ctx.strokeStyle = "rgba(180,200,255,.28)";
+    ctx.lineWidth = 8*DPR;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(mx + r*0.55, my + r*0.55);
+    ctx.lineTo(hx + r*0.55, hy + r*0.55);
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(124,247,199,.95)";
+    ctx.beginPath();
+    ctx.arc(hx + r*0.55, hy + r*0.55, 10*DPR, 0, Math.PI*2);
+    ctx.fill();
+
+    // info
+    ui.magInfo.textContent = `lens:${(state.magZoom).toFixed(1)}x  radius:${Math.round(state.magR)}`;
+
+    ctx.restore();
+  }
+
+  // ===== Shake & stabilization =====
+  function applyShake(){
+    // shake depends on wind and reduced by stabilizing finger proximity/strength
+    const amp = state.shakeAmp * (1 - state.stabilizeStrength);
+    const sx = Math.sin(state.shakeT*2.1) * amp;
+    const sy = Math.cos(state.shakeT*1.7) * amp;
+    return {sx, sy};
+  }
+
+  // ===== Click detection =====
+  function findClickedCharacter(screenX, screenY){
+    // convert to world space using base camera
+    const p = screenToWorld(screenX / DPR, screenY / DPR);
+
+    // brute force: enough for ~150 items
+    let best = -1, bestD = 1e9;
+    for(let i=0;i<state.chars.length;i++){
+      const ch = state.chars[i];
+      const d = dist(p.wx, p.wy, ch.x, ch.y);
+      if(d < ch.hit && d < bestD){
+        best = i;
+        bestD = d;
+      }
+    }
+    return best;
+  }
+
+  // ===== Main render loop =====
+  function frame(ts){
+    const w = canvas.width, h = canvas.height;
+    state.shakeT += 0.016;
+
+    ctx.clearRect(0,0,w,h);
+
+    // draw background specks
+    drawBackground();
+
+    // compute shake offset in screen pixels
+    const {sx, sy} = applyShake();
+    ui.stability.textContent = `${Math.round(state.stabilizeStrength*100)}%`;
+
+    // apply shake as a translate for the main world render
+    ctx.save();
+    ctx.translate(sx*DPR, sy*DPR);
+
+    // main world: grid + chars
+    drawGrid();
+    drawCharacters();
+
+    // compass
+    drawCompass();
+
+    ctx.restore();
+
+    // magnifier (drawn on top, NOT shaken, so it helps you)
+    drawMagnifier();
+
+    requestAnimationFrame(frame);
+  }
+
+  // ===== Pointer / touch controls =====
+  // We support multi-touch:
+  // - One pointer for stabilization (any press on empty map)
+  // - One pointer for magnifier drag if pressed near handle/lens
+  const pointers = new Map();
+
+  function isNearMagHandle(px, py){
+    const r = state.magR * DPR;
+    const hx = state.magX + r*0.78 + r*0.55;
+    const hy = state.magY + r*0.78 + r*0.55;
+    return dist(px, py, hx, hy) < 22*DPR;
+  }
+  function isInsideLens(px, py){
+    const r = state.magR * DPR;
+    return dist(px, py, state.magX, state.magY) <= r;
+  }
+
+  canvas.addEventListener('pointerdown', (e) => {
+    canvas.setPointerCapture(e.pointerId);
+    const p = getCanvasPoint(e);
+    pointers.set(e.pointerId, {x:p.x, y:p.y, role:""});
+
+    // Decide role:
+    // If near handle or inside lens: drag magnifier
+    // Else: stabilize
+    if(isNearMagHandle(p.x, p.y) || (isInsideLens(p.x, p.y) && !state.stabilizing)){
+      pointers.get(e.pointerId).role = "mag";
+      state.draggingMag = true;
+      // bring lens to pointer
+      state.magX = p.x;
+      state.magY = p.y;
+    } else {
+      pointers.get(e.pointerId).role = "stab";
+      state.stabilizing = true;
+      state.stabilizeX = p.x;
+      state.stabilizeY = p.y;
+    }
+  });
+
+  canvas.addEventListener('pointermove', (e) => {
+    if(!pointers.has(e.pointerId)) return;
+    const p = getCanvasPoint(e);
+    const it = pointers.get(e.pointerId);
+    it.x = p.x; it.y = p.y;
+
+    if(it.role === "mag"){
+      state.magX = p.x;
+      state.magY = p.y;
+      // keep lens within canvas
+      state.magX = clamp(state.magX, state.magR*DPR, canvas.width - state.magR*DPR);
+      state.magY = clamp(state.magY, state.magR*DPR, canvas.height - state.magR*DPR);
+    } else if(it.role === "stab"){
+      state.stabilizeX = p.x;
+      state.stabilizeY = p.y;
+    }
+
+    // compute stabilize strength based on how many stabilize pointers & closeness to center
+    updateStability();
+  });
+
+  function updateStability(){
+    const stabs = [...pointers.values()].filter(p=>p.role==="stab");
+    if(stabs.length === 0){
+      state.stabilizeStrength = lerp(state.stabilizeStrength, 0, 0.18);
+      state.stabilizing = false;
+      return;
+    }
+    // average position
+    let ax=0, ay=0;
+    for(const s of stabs){ ax+=s.x; ay+=s.y; }
+    ax/=stabs.length; ay/=stabs.length;
+
+    const cx = canvas.width*0.5, cy = canvas.height*0.55;
+    const d = dist(ax, ay, cx, cy);
+    const maxD = Math.min(canvas.width, canvas.height) * 0.55;
+    const closeness = 1 - clamp(d / maxD, 0, 1);
+
+    // stronger stabilization when pressed near center, also slightly scales with number of stabs
+    const multi = clamp(0.8 + stabs.length*0.12, 0.8, 1.0);
+    const target = clamp(closeness * multi, 0, 1);
+
+    state.stabilizeStrength = lerp(state.stabilizeStrength, target, 0.25);
+    state.stabilizing = true;
+  }
+
+  canvas.addEventListener('pointerup', (e) => {
+    if(!pointers.has(e.pointerId)) return;
+
+    const it = pointers.get(e.pointerId);
+    const p = getCanvasPoint(e);
+
+    // If it was a quick tap (not dragging mag), treat as selection attempt
+    if(it.role !== "mag"){
+      // adjust for shake? Tap should use current camera (no shake translate)
+      // We render shake as a translate; convert tap to unshaken coordinates by subtracting current shake.
+      const sh = applyShake();
+      const unshakenX = (p.x - sh.sx*DPR);
+      const unshakenY = (p.y - sh.sy*DPR);
+
+      const hit = findClickedCharacter(unshakenX, unshakenY);
+      if(hit >= 0){
+        const ch = state.chars[hit];
+        if(hit === state.targetIndex){
+          // success
+          randomizeWind(); // new weather
+          state.score++;
+          // Make it harder after success slightly
+          if(state.hard){
+            state.magZoom = clamp(state.magZoom + 0.12, 2.8, 3.6);
+          }
+          pickNewTarget();
+          // tiny feedback
+          ui.targetName.textContent = state.hard ? "FOUND! New target…" : "FOUND! New target…";
+          setTimeout(()=> {
+            ui.targetName.textContent = state.hard ? "??? (blended)" : state.chars[state.targetIndex].type;
+          }, 500);
+        } else {
+          // show coords of what you clicked (learning)
+          const g = worldToGrid(ch.x, ch.y);
+          ui.bearing.textContent = `clicked → X:${String(g.gx).padStart(2,'0')} Y:${String(g.gy).padStart(2,'0')}`;
+        }
+      }
+    }
+
+    pointers.delete(e.pointerId);
+    state.draggingMag = [...pointers.values()].some(p=>p.role==="mag");
+    updateStability();
+  });
+
+  canvas.addEventListener('pointercancel', (e) => {
+    pointers.delete(e.pointerId);
+    state.draggingMag = [...pointers.values()].some(p=>p.role==="mag");
+    updateStability();
+  });
+
+  // ===== Buttons =====
+  ui.btnNew.addEventListener('click', () => { pickNewTarget(); });
+  ui.btnReset.addEventListener('click', () => { resetView(); });
+  ui.btnHard.addEventListener('click', () => {
+    state.hard = !state.hard;
+    randomizeWind();
+    rebuildCharacters();
+    resetView();
+  });
+
+  // ===== Init =====
+  function init(){
+    randomizeWind();
+    rebuildCharacters(); // normal
+    resetView();
+    requestAnimationFrame(frame);
+  }
+  init();
+})();
+</script>
+</body>
+</html>
