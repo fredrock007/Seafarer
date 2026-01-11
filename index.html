@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Sea Farer — Scope Hunt (NV/Thermal + Breath + Gusts + Hit Calls)</title>
+  <title>Sea Farer — COD Style Scope Hunt</title>
   <style>
     :root{
       --hud:#e9eefc;
@@ -11,188 +11,90 @@
       --ok:#75ffba;
       --bad:#ff6a6a;
       --warn:#ffcf5a;
-      --glass: rgba(255,255,255,0.06);
-      --line: rgba(255,255,255,0.18);
+      --glass: rgba(255,255,255,0.08);
+      --line: rgba(255,255,255,0.16);
     }
-    html,body{
-      height:100%; margin:0; overflow:hidden;
-      background: radial-gradient(1200px 800px at 30% 30%, #101a55 0%, #070a14 45%, #05060b 100%);
-      color: var(--hud);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      user-select:none; -webkit-user-select:none;
-      touch-action:none;
+    html,body{ height:100%; margin:0; overflow:hidden; background:#05060b; color:var(--hud);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      user-select:none; -webkit-user-select:none; touch-action:none;
     }
     #wrap{ position:relative; width:100vw; height:100vh; }
-    canvas{
-      position:absolute; inset:0; width:100%; height:100%; display:block;
-      background:
-        radial-gradient(900px 700px at 70% 35%, rgba(152, 93, 255, 0.18), transparent 60%),
-        radial-gradient(700px 600px at 25% 70%, rgba(64, 255, 213, 0.10), transparent 60%),
-        radial-gradient(900px 900px at 40% 40%, rgba(255, 120, 200, 0.07), transparent 70%),
-        radial-gradient(1200px 900px at 50% 50%, rgba(0,0,0,0.65), rgba(0,0,0,0.88));
-    }
+    canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
 
     .hud{
-      position:absolute; left:16px; top:16px;
-      display:flex; flex-direction:column; gap:10px;
-      pointer-events:none; max-width: 420px;
+      position:absolute; left:14px; top:14px; pointer-events:none;
+      display:flex; flex-direction:column; gap:10px; max-width:420px;
     }
     .panel{
       background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
       border: 1px solid rgba(255,255,255,0.14);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
       border-radius:14px;
       padding:10px 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
       backdrop-filter: blur(10px);
     }
-    .title{
-      font-weight:800; letter-spacing:0.6px; font-size:12px;
-      color: var(--hud2); text-transform: uppercase; margin-bottom:6px;
-    }
+    .title{ font-weight:800; letter-spacing:0.6px; font-size:12px; color:var(--hud2); text-transform:uppercase; margin-bottom:6px; }
     .row{ display:flex; justify-content:space-between; gap:12px; font-size:12px; line-height:1.35; }
-    .row b{ color: var(--hud); }
+    .row b{ color:var(--hud); }
     .hint{ font-size:12px; color: rgba(233,238,252,0.78); margin-top:8px; }
 
-    .badge{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:6px 10px; border-radius:999px;
-      border:1px solid rgba(255,255,255,0.12);
-      background: rgba(0,0,0,0.25);
-      font-size:12px; width:fit-content; margin-top:10px;
-    }
-    .dot{ width:8px; height:8px; border-radius:50%; background: var(--ok); box-shadow: 0 0 18px rgba(117,255,186,0.45); }
-    .dot.bad{ background: var(--bad); box-shadow: 0 0 18px rgba(255,106,106,0.45); }
-
-    .barWrap{
-      margin-top:10px;
-      border-radius: 12px;
-      border:1px solid rgba(255,255,255,0.12);
-      background: rgba(0,0,0,0.24);
-      padding:8px 10px;
-    }
-    .barLabel{
-      display:flex; justify-content:space-between;
-      font-size:12px; color: rgba(233,238,252,0.82);
-      margin-bottom:6px;
-    }
-    .bar{
-      height:10px;
-      border-radius:999px;
-      background: rgba(255,255,255,0.08);
-      overflow:hidden;
-      border:1px solid rgba(255,255,255,0.10);
-    }
-    .bar > div{
-      height:100%;
-      width:60%;
-      background: rgba(117,255,186,0.75);
-    }
-
     .toast{
-      position:absolute; right:16px; top:16px;
-      width:min(520px, calc(100vw - 32px));
-      pointer-events:none;
-      display:flex; flex-direction:column; gap:10px; align-items:flex-end;
+      position:absolute; right:14px; top:14px; width:min(520px, calc(100vw - 28px));
+      display:flex; flex-direction:column; gap:10px; align-items:flex-end; pointer-events:none;
     }
     .msg{
-      background: rgba(0,0,0,0.38);
+      background: rgba(0,0,0,0.44);
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: 14px;
       padding:10px 12px;
       backdrop-filter: blur(10px);
       box-shadow: 0 10px 40px rgba(0,0,0,0.35);
       font-size:12px;
-      color: rgba(233,238,252,0.88);
+      color: rgba(233,238,252,0.90);
       max-width: 520px;
     }
     .msg b{ color: var(--warn); }
 
-    .bottom{
-      position:absolute; left:50%; transform:translateX(-50%); bottom:14px;
-      width:min(980px, calc(100vw - 20px));
-      pointer-events:none;
-      display:flex; flex-direction:column; gap:8px;
-    }
-    .compass{
-      height:46px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,0.14);
-      background: rgba(0,0,0,0.28);
-      backdrop-filter: blur(10px);
-      overflow:hidden;
-      display:flex; align-items:center;
-      padding:0 12px; gap:12px;
-    }
-    .compass .label{
-      font-size:12px;
-      color: rgba(233,238,252,0.8);
-      min-width:120px;
-    }
-    .strip{
-      position:relative;
-      flex:1;
-      height:30px;
-      border-radius:10px;
-      background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-      border: 1px solid rgba(255,255,255,0.10);
-      overflow:hidden;
-    }
-    .strip .ticks{
-      position:absolute; inset:0;
-      background-image: linear-gradient(to right, rgba(255,255,255,0.18) 1px, transparent 1px);
-      background-size: 40px 100%;
-      opacity:0.35;
-    }
-    .strip .ticks2{
-      position:absolute; inset:0;
-      background-image: linear-gradient(to right, rgba(255,255,255,0.22) 1px, transparent 1px);
-      background-size: 200px 100%;
-      opacity:0.35;
-    }
-    .strip .center{
-      position:absolute; top:0; bottom:0; left:50%;
-      width:2px;
-      background: rgba(255,255,255,0.55);
-      box-shadow: 0 0 14px rgba(255,255,255,0.20);
-    }
-    .strip .text{
-      position:absolute; top:50%; transform: translateY(-50%);
-      width:100%;
-      display:flex;
-      justify-content:space-between;
-      padding:0 10px;
-      font-size:11px;
-      color: rgba(233,238,252,0.70);
-      letter-spacing:0.4px;
-    }
-
     .controls{
-      position:absolute; right:16px; bottom:16px;
-      width:min(520px, calc(100vw - 32px));
+      position:absolute; right:14px; bottom:14px; width:min(520px, calc(100vw - 28px));
       pointer-events:auto;
     }
     button{
       appearance:none; border:none; cursor:pointer;
-      border-radius:12px;
-      padding:10px 12px;
+      border-radius:12px; padding:10px 12px;
       background: rgba(255,255,255,0.10);
       color: var(--hud);
       border: 1px solid rgba(255,255,255,0.14);
-      font-weight:750;
-      letter-spacing:0.2px;
+      font-weight:750; letter-spacing:0.2px;
     }
     button:hover{ background: rgba(255,255,255,0.14); }
     .btnRow{ display:flex; gap:10px; flex-wrap:wrap; }
     .mini{ font-size:12px; opacity:0.92; color: rgba(233,238,252,0.80); }
     .kbd{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
       background: rgba(255,255,255,0.10);
       border:1px solid rgba(255,255,255,0.10);
-      padding:2px 6px;
-      border-radius:8px;
-      color: rgba(233,238,252,0.92);
+      padding:2px 6px; border-radius:8px; color: rgba(233,238,252,0.92);
       white-space:nowrap;
     }
+
+    .centerHUD{
+      position:absolute; left:50%; transform:translateX(-50%);
+      bottom:14px; pointer-events:none;
+      width:min(640px, calc(100vw - 28px));
+      display:flex; gap:10px; justify-content:center; align-items:center;
+    }
+    .pill{
+      background: rgba(0,0,0,0.38);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding:8px 12px;
+      backdrop-filter: blur(10px);
+      font-size:12px;
+      color: rgba(233,238,252,0.90);
+      display:flex; gap:10px; align-items:center;
+    }
+    .pill b{ color: var(--hud); }
   </style>
 </head>
 <body>
@@ -201,91 +103,49 @@
 
   <div class="hud">
     <div class="panel">
-      <div class="title">Sea Farer — Scope Hunt</div>
+      <div class="title">Sea Farer — COD Style Hunt</div>
+      <div class="row"><span>Round</span><b id="roundTxt">1</b></div>
+      <div class="row"><span>Timer</span><b id="timerTxt">60.0s</b></div>
 
-      <div class="row"><span>Mode</span><b id="modeTxt">Free Hunt</b></div>
-      <div class="row"><span>Vision</span><b id="visionTxt">Normal</b></div>
-      <div class="row"><span>Zoom</span><b id="zoomTxt">1×</b></div>
+      <div class="row"><span>Objective</span><b id="obj">—</b></div>
+      <div class="row"><span>Hint (approx coords)</span><b id="hint">—</b></div>
 
-      <div class="row"><span>Targets Remaining</span><b id="remain">0</b></div>
-      <div class="row"><span>Hits / Shots</span><b id="score">0 / 0</b></div>
-      <div class="row"><span>Accuracy</span><b id="acc">0%</b></div>
+      <div class="row"><span>ADS / Scope</span><b id="scopeTxt">OFF</b></div>
+      <div class="row"><span>Ammo</span><b id="ammoTxt">30 / 90</b></div>
+      <div class="row"><span>Reload</span><b id="reloadTxt">READY</b></div>
 
       <div class="row"><span>Wind</span><b id="wind">0.0 kt</b></div>
-      <div class="row"><span>Coordinates</span><b id="coord">X: 0  Y: 0</b></div>
       <div class="row"><span>Range</span><b id="range">0 m</b></div>
-      <div class="row"><span>Flight Time</span><b id="tof">0.00 s</b></div>
 
-      <div class="row"><span>Deck Sway</span><b id="swayTxt">ON</b></div>
-      <div class="row"><span>Breath Hold</span><b id="breathTxt">READY</b></div>
+      <div class="row"><span>Kills / Shots</span><b id="score">0 / 0</b></div>
+      <div class="row"><span>Streak</span><b id="streak">0</b></div>
 
       <div class="hint">
-        <b>Keys:</b>
-        <span class="kbd">Z</span> zoom •
-        <span class="kbd">N</span> vision •
-        <span class="kbd">M</span> missions •
-        <span class="kbd">S</span> sway •
-        <span class="kbd">H</span> hover assist •
-        <span class="kbd">Shift</span> hold breath •
-        <span class="kbd">R</span> reset
-      </div>
-
-      <div class="badge">
-        <span class="dot bad" id="lockDot"></span>
-        <span id="lockTxt">No lock</span>
-      </div>
-
-      <div class="barWrap">
-        <div class="barLabel">
-          <span>Breath Stamina</span>
-          <b id="breathPct">100%</b>
-        </div>
-        <div class="bar"><div id="breathBar"></div></div>
-      </div>
-
-      <div class="panel" style="margin-top:10px;">
-        <div class="title">Mission</div>
-        <div class="row"><span>Objective</span><b id="missionTitle">—</b></div>
-        <div class="row"><span>Hint</span><b id="missionHint">—</b></div>
-        <div class="row"><span>Progress</span><b id="missionProg">—</b></div>
+        <b>COD controls:</b><br/>
+        Aim with mouse/trackpad • <b>Right-click</b> ADS • <b>Left-click</b> shoot • <b>R</b> reload<br/>
+        <span class="kbd">N</span> vision (optional) • <span class="kbd">Shift</span> steady (small) • <span class="kbd">Esc</span> reset round
       </div>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
-  <div class="bottom">
-    <div class="compass">
-      <div class="label">Compass / Bearing</div>
-      <div class="strip">
-        <div class="ticks"></div>
-        <div class="ticks2"></div>
-        <div class="center"></div>
-        <div class="text">
-          <span>W</span><span>NW</span><span>N</span><span>NE</span><span>E</span>
-        </div>
-      </div>
-      <div class="label" style="text-align:right;">
-        Bearing: <b id="bearing">000°</b>
-      </div>
-    </div>
+  <div class="centerHUD">
+    <div class="pill">Aim Assist: <b>ON (ADS)</b></div>
+    <div class="pill">Targets this round: <b id="targetsLeft">3</b></div>
+    <div class="pill">Points: <b id="pointsTxt">0</b></div>
   </div>
 
   <div class="controls">
     <div class="panel">
-      <div class="title">Quick Controls</div>
+      <div class="title">Quick Buttons</div>
       <div class="mini">
-        <b>Mouse/Trackpad:</b> move to aim • click/tap to fire<br/>
-        <b>Extras:</b> In Missions mode, you should shoot the correct target (near the hinted coordinates).
+        Mobile: <b>Long-press</b> ADS • Tap shoot • Two-finger tap reload
       </div>
       <div class="btnRow" style="margin-top:10px;">
         <button id="resetBtn">Reset Round</button>
         <button id="shuffleBtn">Shuffle Crowd</button>
-        <button id="assistBtn">Hover Assist: ON</button>
-        <button id="zoomBtn">Zoom: 1×</button>
         <button id="visionBtn">Vision: Normal</button>
-        <button id="missionBtn">Missions: OFF</button>
-        <button id="swayBtn">Sway: ON</button>
       </div>
     </div>
   </div>
@@ -296,72 +156,70 @@
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d', { alpha:true });
 
-  const uiRemain = document.getElementById('remain');
-  const uiScore  = document.getElementById('score');
-  const uiAcc    = document.getElementById('acc');
-  const uiWind   = document.getElementById('wind');
-  const uiCoord  = document.getElementById('coord');
-  const uiRange  = document.getElementById('range');
-  const uiTof    = document.getElementById('tof');
-  const uiBearing= document.getElementById('bearing');
-  const uiZoom   = document.getElementById('zoomTxt');
-  const uiMode   = document.getElementById('modeTxt');
-  const uiSway   = document.getElementById('swayTxt');
+  const uiRound = document.getElementById('roundTxt');
+  const uiTimer = document.getElementById('timerTxt');
+  const uiObj   = document.getElementById('obj');
+  const uiHint  = document.getElementById('hint');
+  const uiScope = document.getElementById('scopeTxt');
+  const uiAmmo  = document.getElementById('ammoTxt');
+  const uiReload= document.getElementById('reloadTxt');
+  const uiWind  = document.getElementById('wind');
+  const uiRange = document.getElementById('range');
+  const uiScore = document.getElementById('score');
+  const uiStreak= document.getElementById('streak');
+  const uiTargetsLeft = document.getElementById('targetsLeft');
+  const uiPoints = document.getElementById('pointsTxt');
 
-  const uiVision = document.getElementById('visionTxt');
-
-  const uiBreathTxt = document.getElementById('breathTxt');
-  const uiBreathPct = document.getElementById('breathPct');
-  const uiBreathBar = document.getElementById('breathBar');
-
-  const uiMissionTitle = document.getElementById('missionTitle');
-  const uiMissionHint  = document.getElementById('missionHint');
-  const uiMissionProg  = document.getElementById('missionProg');
-
-  const lockDot  = document.getElementById('lockDot');
-  const lockTxt  = document.getElementById('lockTxt');
-  const toastEl  = document.getElementById('toast');
-
-  const resetBtn  = document.getElementById('resetBtn');
-  const shuffleBtn= document.getElementById('shuffleBtn');
-  const assistBtn = document.getElementById('assistBtn');
-  const zoomBtn   = document.getElementById('zoomBtn');
+  const toastEl = document.getElementById('toast');
+  const resetBtn = document.getElementById('resetBtn');
+  const shuffleBtn = document.getElementById('shuffleBtn');
   const visionBtn = document.getElementById('visionBtn');
-  const missionBtn= document.getElementById('missionBtn');
-  const swayBtn   = document.getElementById('swayBtn');
 
-  // World
-  const WORLD_W = 2400;
-  const WORLD_H = 1600;
-  const NUM_CHAR = 100;
+  // ===== COD-FEEL CONFIG =====
+  const WORLD_W = 2600;
+  const WORLD_H = 1800;
+  const NUM_CHAR = 95;
 
-  // Small targets
-  const CHAR_SIZE = 10;
-  const HIT_RADIUS = 16;
-  const HOVER_RADIUS = 52;
-  const DANCE_STRENGTH = 6.0;
+  const CHAR_SIZE = 15;
+  const HIT_RADIUS = 26;          // forgiving
+  const DANCE_RADIUS = 90;        // clear “you’re on target”
+  const AIM_ASSIST_RADIUS = 120;  // magnet zone (ADS)
 
-  // Ballistics feel
-  const MUZZLE_V = 650;
-  const MAX_TOF  = 1.25;
-  const WIND_KT_TO_DRIFT = 0.45;
+  const MUZZLE_V = 900;
+  const MAX_TOF  = 0.9;
 
-  // Scope & shake
-  const SCOPE_RADIUS_PX_BASE = 170;
-  const CROSS_GAP = 14;
-  const SHAKE_ON_SHOT = 10;
-  const SHAKE_DECAY = 0.90;
+  const WIND_KT_TO_DRIFT = 0.28;  // mild (COD-ish)
+  const WIND_BASE_MIN = 6, WIND_BASE_MAX = 14;
 
-  // Zoom
-  const zoomLevels = [1, 2, 4];
-  let zoomIndex = 0;
-  let zoom = zoomLevels[zoomIndex];
+  // camera follow: COD = tight
+  const CAM_FOLLOW = 0.18;
 
-  // Vision modes
-  const visionModes = ["Normal", "Night Vision", "Thermal"];
+  // ADS smooth zoom
+  const ZOOM_OFF = 1.0;
+  const ZOOM_ON  = 3.2;
+  const ZOOM_SPEED = 0.16;        // fast snap
+
+  // reticle/scope
+  const SCOPE_R_BASE = 200;
+
+  // recoil + shake
+  const SHAKE_ON_SHOT = 6;
+  const SHAKE_DECAY = 0.86;
+
+  // ammo / reload
+  const MAG_SIZE = 30;
+  const RESERVE_START = 90;
+  const RELOAD_MS = 900;
+
+  // round
+  const TARGETS_PER_ROUND = 3;
+  const ROUND_TIME_S = 60;
+
+  // Vision (optional)
+  const visionModes = ["Normal","Night Vision","Thermal"];
   let visionIndex = 0;
 
-  // Canvas scale
+  // DPR
   let W=0, H=0, DPR=1;
   function resize(){
     DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
@@ -372,62 +230,91 @@
   addEventListener('resize', resize);
   resize();
 
+  // Helpers
+  const rand=(a,b)=>a+Math.random()*(b-a);
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const dist=(ax,ay,bx,by)=>Math.hypot(ax-bx,ay-by);
+  const lerp=(a,b,t)=>a+(b-a)*t;
+
+  // Simple sound via WebAudio (tiny, COD-ish feedback)
+  let audioCtx = null;
+  function beep(freq=880, dur=0.05, type="square", gain=0.05){
+    try{
+      if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type;
+      o.frequency.value = freq;
+      g.gain.value = gain;
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start();
+      o.stop(audioCtx.currentTime + dur);
+    }catch{}
+  }
+
+  function toast(html, ms=1500){
+    const div=document.createElement('div');
+    div.className='msg';
+    div.innerHTML=html;
+    toastEl.appendChild(div);
+    setTimeout(()=>{
+      div.style.transition='opacity 260ms ease, transform 260ms ease';
+      div.style.opacity='0';
+      div.style.transform='translateY(-6px)';
+      setTimeout(()=>div.remove(),320);
+    }, ms);
+  }
+
+  // Cursor
+  const cursor = { x: W/2, y: H/2 };
+  const cursorWorld = { x: WORLD_W/2, y: WORLD_H/2 };
+
   // Camera
-  const cam = {
-    x: WORLD_W/2,
-    y: WORLD_H/2,
-    shakeX: 0,
-    shakeY: 0,
-  };
+  const cam = { x: WORLD_W/2, y: WORLD_H/2, shakeX:0, shakeY:0 };
 
-  // Deck sway
-  let swayOn = true;
-  const sway = { a: 10, b: 7, s1: 0.0019, s2: 0.0026 };
+  // ADS/Zoom
+  let scoped = false;
+  let zoom = ZOOM_OFF;
+  let zoomTarget = ZOOM_OFF;
 
-  // Breath hold system
-  let holdingBreath = false;
-  let breath = 1.0;            // 0..1
-  const breathDrain = 0.25;    // per second
-  const breathRegen = 0.18;    // per second
-  const breathMinToHold = 0.10;
+  // Breath/steady (small effect, COD-ish)
+  let steady = false;
 
-  // Assist & modes
-  let hoverAssist = true;
-  let missionsOn = false;
+  // Wind
+  const wind = { base: rand(WIND_BASE_MIN, WIND_BASE_MAX), dir: Math.random()*Math.PI*2 };
+  let gust = { extra:0, until:0, active:false };
+
+  function effectiveWind(){ return wind.base + (gust.active ? gust.extra : 0); }
 
   // Stats
-  let shots=0, hits=0;
+  let shots=0, kills=0, streak=0, points=0;
 
-  // Wind + gusts
-  const wind = { speed: 8 + Math.random()*14, dir: Math.random()*Math.PI*2 };
-  let gust = {
-    active: false,
-    until: 0,
-    extra: 0,
-    msgCooldown: 0
-  };
+  // Ammo
+  let mag = MAG_SIZE;
+  let reserve = RESERVE_START;
+  let reloading = false;
+  let reloadUntil = 0;
 
-  // Cursor (screen device coords)
-  const cursor = { x: W/2, y: H/2 };
+  // Rounds + targets
+  let round = 1;
+  let timeLeft = ROUND_TIME_S;
+  let roundTargets = []; // array of targetIds
+  let currentTargetIndex = 0;
 
-  // Targets
+  // World
   const ICONS = [
-    { name:"Pika-ish",   glyph:"⚡", hue: 52 },
-    { name:"DBZ-ish",    glyph:"✦", hue: 40 },
-    { name:"Fighter",    glyph:"✊", hue: 10 },
+    { name:"Pika-ish", glyph:"⚡", hue: 52 },
+    { name:"DBZ-ish",  glyph:"✦", hue: 40 },
+    { name:"Fighter",  glyph:"✊", hue: 10 },
     { name:"Sponge-ish", glyph:"▦", hue: 58 },
-    { name:"Alien",      glyph:"⬡", hue: 190 },
-    { name:"Bot",        glyph:"⬢", hue: 210 },
-    { name:"Star",       glyph:"✶", hue: 300 },
-    { name:"Skull",      glyph:"☠", hue: 350 },
+    { name:"Alien", glyph:"⬡", hue: 190 },
+    { name:"Bot", glyph:"⬢", hue: 210 },
+    { name:"Star", glyph:"✶", hue: 300 },
+    { name:"Skull", glyph:"☠", hue: 350 }
   ];
 
-  function rand(min,max){ return min + Math.random()*(max-min); }
-  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
-  function dist(ax,ay,bx,by){ return Math.hypot(ax-bx, ay-by); }
-
   let chars = [];
-  function spawnCharacters(){
+  function spawn(){
     chars = [];
     for(let i=0;i<NUM_CHAR;i++){
       const icon = ICONS[(Math.random()*ICONS.length)|0];
@@ -435,49 +322,25 @@
         id:i,
         x: rand(80, WORLD_W-80),
         y: rand(80, WORLD_H-80),
-        baseX: 0,
-        baseY: 0,
-        alive: true,
+        alive:true,
         icon,
         seed: Math.random()*9999,
-        bob: rand(0.6, 1.6),
-        scale: rand(0.85, 1.15),
-        dance: 0,
-        hitFlash: 0,
-        vx: rand(-18, 18),
-        vy: rand(-14, 14)
+        scale: rand(0.90, 1.25),
+        vx: rand(-24, 24),
+        vy: rand(-18, 18),
+        dance: 0
       });
     }
-    for(const c of chars){ c.baseX=c.x; c.baseY=c.y; }
   }
-  spawnCharacters();
 
-  // Stars
-  const stars = new Array(820).fill(0).map(()=>({
+  const stars = new Array(950).fill(0).map(()=>({
     x: Math.random()*WORLD_W,
     y: Math.random()*WORLD_H,
-    r: Math.random()*1.7 + 0.2,
+    r: Math.random()*1.6 + 0.25,
     a: Math.random()*0.8 + 0.15
   }));
 
-  // Toast
-  function toast(html, ms=1600){
-    const div = document.createElement('div');
-    div.className = 'msg';
-    div.innerHTML = html;
-    toastEl.appendChild(div);
-    setTimeout(()=>{
-      div.style.transition = 'opacity 260ms ease, transform 260ms ease';
-      div.style.opacity = '0';
-      div.style.transform = 'translateY(-6px)';
-      setTimeout(()=>div.remove(), 320);
-    }, ms);
-  }
-
-  // --- Zoom-aware transforms ---
-  function viewHalfW(){ return (W/(2*DPR))/zoom; }
-  function viewHalfH(){ return (H/(2*DPR))/zoom; }
-
+  // Transform
   function worldToScreen(wx, wy){
     const sx = (wx - cam.x) * zoom + (W/(2*DPR));
     const sy = (wy - cam.y) * zoom + (H/(2*DPR));
@@ -497,206 +360,179 @@
     cursor.x = x * DPR;
     cursor.y = y * DPR;
   }
+  canvas.addEventListener('contextmenu', (e)=>e.preventDefault());
+
   canvas.addEventListener('mousemove', (e)=>setCursorFromEvent(e), { passive:true });
-  canvas.addEventListener('mousedown', (e)=>{ setCursorFromEvent(e); fire(); }, { passive:true });
-  canvas.addEventListener('touchstart', (e)=>{ setCursorFromEvent(e); fire(); }, { passive:false });
+  canvas.addEventListener('mousedown', (e)=>{
+    setCursorFromEvent(e);
+    if(e.button === 2){ toggleScope(); return; }
+    if(e.button === 0){ shoot(); return; }
+  }, { passive:true });
+
+  // Mobile: long press ADS, tap shoot, two-finger tap reload
+  let pressTimer = null;
+  canvas.addEventListener('touchstart', (e)=>{
+    setCursorFromEvent(e);
+    if(e.touches && e.touches.length >= 2){
+      reload();
+      return;
+    }
+    pressTimer = setTimeout(()=>{ toggleScope(); pressTimer=null; }, 330);
+  }, { passive:false });
   canvas.addEventListener('touchmove', (e)=>{ setCursorFromEvent(e); }, { passive:false });
+  canvas.addEventListener('touchend', ()=>{
+    if(pressTimer){
+      clearTimeout(pressTimer);
+      pressTimer=null;
+      shoot();
+    }
+  }, { passive:false });
 
   addEventListener('keydown', (e)=>{
     const k = e.key.toLowerCase();
-    if(k==='r') resetRound();
-    if(k==='h') toggleAssist();
-    if(k==='z') cycleZoom();
-    if(k==='m') toggleMissions();
-    if(k==='s') toggleSway();
+    if(k==='r') reload();
     if(k==='n') cycleVision();
-    if(e.key === 'Shift') holdingBreath = true;
+    if(k==='escape') resetRound();
+    if(e.key === 'Shift') steady = true;
   });
   addEventListener('keyup', (e)=>{
-    if(e.key === 'Shift') holdingBreath = false;
+    if(e.key === 'Shift') steady = false;
   });
 
   resetBtn.addEventListener('click', resetRound);
-  shuffleBtn.addEventListener('click', ()=>{ spawnCharacters(); buildMissions(); toast("Shuffled the galaxy crowd."); });
-  assistBtn.addEventListener('click', toggleAssist);
-  zoomBtn.addEventListener('click', cycleZoom);
+  shuffleBtn.addEventListener('click', ()=>{
+    spawn(); buildRoundTargets();
+    toast("Crowd shuffled. Targets re-picked.");
+  });
   visionBtn.addEventListener('click', cycleVision);
-  missionBtn.addEventListener('click', toggleMissions);
-  swayBtn.addEventListener('click', toggleSway);
 
-  function toggleAssist(){
-    hoverAssist = !hoverAssist;
-    assistBtn.textContent = `Hover Assist: ${hoverAssist ? 'ON' : 'OFF'}`;
-    toast(`Hover Assist <b>${hoverAssist ? 'ON' : 'OFF'}</b>`);
-  }
-  function cycleZoom(){
-    zoomIndex = (zoomIndex+1) % zoomLevels.length;
-    zoom = zoomLevels[zoomIndex];
-    uiZoom.textContent = `${zoom}×`;
-    zoomBtn.textContent = `Zoom: ${zoom}×`;
-    toast(`Zoom set to <b>${zoom}×</b>`);
+  function toggleScope(){
+    scoped = !scoped;
+    zoomTarget = scoped ? ZOOM_ON : ZOOM_OFF;
+    uiScope.textContent = scoped ? "ON" : "OFF";
+    beep(scoped ? 520 : 420, 0.05, "sine", 0.05);
   }
   function cycleVision(){
     visionIndex = (visionIndex+1) % visionModes.length;
-    const v = visionModes[visionIndex];
-    uiVision.textContent = v;
-    visionBtn.textContent = `Vision: ${v}`;
-    toast(`Vision: <b>${v}</b>`);
-  }
-  function toggleMissions(){
-    missionsOn = !missionsOn;
-    uiMode.textContent = missionsOn ? "Missions" : "Free Hunt";
-    missionBtn.textContent = `Missions: ${missionsOn ? 'ON' : 'OFF'}`;
-    toast(`Missions <b>${missionsOn ? 'ON' : 'OFF'}</b>`);
-    if(missionsOn && missions.length===0) buildMissions();
-    if(!missionsOn) renderMissionUI();
-  }
-  function toggleSway(){
-    swayOn = !swayOn;
-    uiSway.textContent = swayOn ? "ON" : "OFF";
-    swayBtn.textContent = `Sway: ${swayOn ? 'ON' : 'OFF'}`;
-    toast(`Deck Sway <b>${swayOn ? 'ON' : 'OFF'}</b>`);
+    visionBtn.textContent = `Vision: ${visionModes[visionIndex]}`;
+    toast(`Vision: <b>${visionModes[visionIndex]}</b>`, 900);
   }
 
-  function resetRound(){
-    shots=0; hits=0;
-    wind.speed = 8 + Math.random()*14;
-    wind.dir = Math.random() * Math.PI * 2;
-    gust.active = false; gust.until = 0; gust.extra = 0; gust.msgCooldown = 0;
-    spawnCharacters();
-    bullets.length = 0;
-    buildMissions();
-    cam.shakeX = 0; cam.shakeY = 0;
-    breath = 1.0; holdingBreath = false;
-    toast("New round. New wind. New chaos.");
-    updateHUD(null, 0, 0);
-  }
-
-  // Missions
-  let missions = [];
-  let missionIndex = 0;
-  function quantize(v, step){ return Math.round(v/step)*step; }
-
-  function buildMissions(){
-    missions = [];
-    missionIndex = 0;
+  // Round targets
+  function quant(v, step){ return Math.round(v/step)*step; }
+  function buildRoundTargets(){
     const alive = chars.filter(c=>c.alive);
-    const pickCount = Math.min(5, alive.length);
-    for(let i=0;i<pickCount;i++){
-      const t = alive.splice((Math.random()*alive.length)|0, 1)[0];
-      missions.push({
-        targetId: t.id,
-        name: t.icon.name,
-        hintX: quantize(t.baseX, 50),
-        hintY: quantize(t.baseY, 50)
-      });
+    roundTargets = [];
+    currentTargetIndex = 0;
+    // pick 3 unique alive targets
+    const pool = alive.slice();
+    for(let i=0;i<TARGETS_PER_ROUND && pool.length;i++){
+      const idx = (Math.random()*pool.length)|0;
+      roundTargets.push(pool[idx].id);
+      pool.splice(idx,1);
     }
-    renderMissionUI();
+    updateObjectiveUI();
   }
 
-  function currentMission(){
-    if(!missionsOn || missions.length===0) return null;
-    return missions[missionIndex] || null;
+  function currentTargetId(){
+    return roundTargets[currentTargetIndex] ?? null;
   }
 
-  function renderMissionUI(){
-    const m = currentMission();
-    if(!missionsOn || !m){
-      uiMissionTitle.textContent = missionsOn ? "No missions" : "—";
-      uiMissionHint.textContent = missionsOn ? "Press Shuffle/Reset" : "—";
-      uiMissionProg.textContent = "—";
+  function updateObjectiveUI(){
+    const id = currentTargetId();
+    const t = (id===null) ? null : chars.find(c=>c.id===id && c.alive);
+    if(!t){
+      uiObj.textContent = "—";
+      uiHint.textContent = "—";
       return;
     }
-    uiMissionTitle.textContent = `Find & shoot: ${m.name}`;
-    uiMissionHint.textContent  = `Near X:${m.hintX}  Y:${m.hintY}`;
-    uiMissionProg.textContent  = `${missionIndex+1} / ${missions.length}`;
+    uiObj.textContent = `Eliminate: ${t.icon.name}`;
+    uiHint.textContent = `Near X:${quant(t.x, 90)}  Y:${quant(t.y, 90)}`;
+    uiTargetsLeft.textContent = String(roundTargets.length - currentTargetIndex);
   }
 
-  // Gust engine
-  function updateGust(now, dt){
-    gust.msgCooldown = Math.max(0, gust.msgCooldown - dt);
-
-    // small natural wind wander
-    wind.speed = clamp(wind.speed + (Math.sin(now*0.00025)*0.002) * dt * 60, 4, 28);
-
-    // trigger gust occasionally
-    if(!gust.active && Math.random() < 0.0022){
-      gust.active = true;
-      gust.extra = rand(4, 12);
-      gust.until = now + rand(1400, 3200);
-      if(gust.msgCooldown <= 0){
-        toast(`Gust incoming: <b>+${gust.extra.toFixed(1)} kt</b>`, 1600);
-        gust.msgCooldown = 1400;
-      }
-    }
-
-    if(gust.active){
-      if(now >= gust.until){
-        gust.active = false;
-        gust.extra = 0;
-        if(gust.msgCooldown <= 0){
-          toast(`Gust faded.`, 1100);
-          gust.msgCooldown = 1200;
-        }
-      }
-    }
+  // Ammo UI
+  function updateAmmoUI(){
+    uiAmmo.textContent = `${mag} / ${reserve}`;
+    uiReload.textContent = reloading ? "RELOADING" : "READY";
   }
 
-  function effectiveWindSpeed(){
-    return wind.speed + (gust.active ? gust.extra : 0);
+  function reload(){
+    if(reloading) return;
+    if(mag >= MAG_SIZE) { beep(220, 0.06, "square", 0.04); return; }
+    if(reserve <= 0) { toast("No reserve ammo.", 900); beep(160, 0.08, "square", 0.05); return; }
+
+    reloading = true;
+    reloadUntil = performance.now() + RELOAD_MS;
+    updateAmmoUI();
+    toast("Reloading...", 800);
+    beep(300, 0.06, "sine", 0.05);
   }
 
-  // Ballistics helpers
-  const bullets = [];
+  // Ballistics
   function calcTof(range){
     const t = range / MUZZLE_V;
     return clamp(t, 0.04, MAX_TOF);
   }
-
   function leadDotWorld(aimW, tof){
-    const ws = effectiveWindSpeed();
+    const ws = effectiveWind();
     const drift = ws * tof * WIND_KT_TO_DRIFT;
     return {
-      x: aimW.x + Math.cos(wind.dir) * drift,
-      y: aimW.y + Math.sin(wind.dir) * drift
+      x: aimW.x + Math.cos(wind.dir)*drift,
+      y: aimW.y + Math.sin(wind.dir)*drift
     };
   }
 
-  // Hit marker (in-scope)
-  let hitMarker = { on:false, until:0, x:0, y:0 };
+  const bullets = [];
+  function shoot(){
+    if(reloading) return;
 
-  function setHitMarker(screenX, screenY){
-    hitMarker.on = true;
-    hitMarker.until = performance.now() + 150; // short “X”
-    hitMarker.x = screenX;
-    hitMarker.y = screenY;
-  }
+    if(mag <= 0){
+      // empty click
+      beep(120, 0.05, "square", 0.06);
+      toast("Out of ammo. Reload (R).", 900);
+      return;
+    }
 
-  function fire(){
+    mag--;
     shots++;
-    cam.shakeX += (Math.random()*2 - 1) * SHAKE_ON_SHOT * DPR;
-    cam.shakeY += (Math.random()*2 - 1) * SHAKE_ON_SHOT * DPR;
+    updateAmmoUI();
+
+    cam.shakeX += (Math.random()*2-1) * SHAKE_ON_SHOT * DPR;
+    cam.shakeY += (Math.random()*2-1) * SHAKE_ON_SHOT * DPR;
 
     const now = performance.now();
-    const aimW = getEffectiveAimWorld(now);
+    // aim world with aim assist if ADS
+    const aimW = getAimedWorldWithAssist(now);
     const range = dist(aimW.x, aimW.y, cam.x, cam.y);
     const tof = calcTof(range);
     const impactW = leadDotWorld(aimW, tof);
 
-    bullets.push({
-      t0: now,
-      tof,
-      aimW: { ...aimW },
-      impactW,
-      alive: true
-    });
+    bullets.push({ t0: now, tof, aimW:{...aimW}, impactW, alive:true });
 
-    updateHUD(null, range, tof);
+    // shot sound
+    beep(880, 0.03, "square", 0.06);
+    beep(220, 0.04, "sine", 0.03);
+
+    uiScore.textContent = `${kills} / ${shots}`;
+  }
+
+  // Hitmarker + killfeed
+  let hitMarkerUntil = 0;
+  let killFeedUntil = 0;
+  let killFeedText = "";
+
+  function setHitMarker(){
+    hitMarkerUntil = performance.now() + 140;
+  }
+
+  function setKillFeed(msg){
+    killFeedText = msg;
+    killFeedUntil = performance.now() + 1100;
   }
 
   function resolveBullet(b){
     let best=null, bestD=Infinity;
-
     for(const c of chars){
       if(!c.alive) continue;
       const d = dist(b.impactW.x, b.impactW.y, c.x, c.y);
@@ -706,504 +542,454 @@
     }
 
     if(best){
-      const range = Math.round(dist(best.x, best.y, cam.x, cam.y));
-      // hit marker at center of scope (true aim)
-      const impactS = worldToScreen(best.x, best.y);
-      setHitMarker(impactS.x, impactS.y);
+      best.alive=false;
 
-      const m = currentMission();
-      if(m){
-        if(best.id === m.targetId){
-          best.alive=false; best.hitFlash=1.0;
-          hits++;
-          toast(`Target down, <b>${range}m</b>. Mission confirmed.`, 1800);
-          missionIndex++;
-          if(missionIndex >= missions.length){
-            toast(`Missions cleared. Accuracy: <b>${shots ? Math.round((hits/shots)*100) : 0}%</b>`, 2400);
-          }
-          renderMissionUI();
+      kills++;
+      streak++;
+      points += 100 + Math.min(150, streak*10);
+
+      const range = Math.round(dist(best.x, best.y, cam.x, cam.y));
+      setHitMarker();
+      setKillFeed(`Target down, ${range}m`);
+
+      // confirm sound
+      beep(1100, 0.05, "sine", 0.06);
+
+      // objective check
+      const tgtId = currentTargetId();
+      if(tgtId !== null && best.id === tgtId){
+        points += 150;
+        toast(`Objective eliminated: <b>${best.icon.name}</b> (+150)`, 1400);
+        currentTargetIndex++;
+        if(currentTargetIndex >= roundTargets.length){
+          toast(`<b>Round clear.</b> Reload and get ready.`, 1700);
+          startNextRound();
         } else {
-          best.alive=false; best.hitFlash=1.0;
-          hits++;
-          toast(`Target down, <b>${range}m</b>. Wrong mission target.`, 2000);
+          updateObjectiveUI();
         }
       } else {
-        best.alive=false; best.hitFlash=1.0;
-        hits++;
-        toast(`Target down, <b>${range}m</b>.`, 1500);
+        toast(`Eliminated <b>${best.icon.name}</b>.`, 1100);
       }
+
+      // streak callouts
+      if(streak === 3) toast(`<b>3 Streak!</b> Keep it going.`, 1200);
+      if(streak === 5) toast(`<b>5 Streak!</b> You’re cooking.`, 1200);
+      if(streak === 7) toast(`<b>7 Streak!</b> Absolute menace.`, 1200);
+
     } else {
-      toast(`Miss. Wind: <b>${effectiveWindSpeed().toFixed(1)} kt</b>`, 1200);
+      // miss resets streak (COD-ish)
+      if(streak > 0) toast(`Miss. Streak reset.`, 900);
+      streak = 0;
+      beep(180, 0.06, "square", 0.04);
     }
+
+    uiScore.textContent = `${kills} / ${shots}`;
+    uiStreak.textContent = String(streak);
+    uiPoints.textContent = String(points);
   }
 
-  // HUD
-  function updateHUD(lockedTarget=null, range=0, tof=0){
-    const remaining = chars.filter(c=>c.alive).length;
-    uiRemain.textContent = remaining;
+  // Aim assist (magnet) when ADS:
+  // pulls aim world toward closest target within radius
+  function getAimedWorldWithAssist(now){
+    const aimWraw = screenToWorld(cursor.x, cursor.y);
 
-    uiScore.textContent = `${hits} / ${shots}`;
-    const acc = shots ? Math.round((hits/shots)*100) : 0;
-    uiAcc.textContent = `${acc}%`;
+    if(!scoped) return aimWraw;
 
-    uiWind.textContent = `${effectiveWindSpeed().toFixed(1)} kt`;
-    uiZoom.textContent = `${zoom}×`;
-    uiSway.textContent = swayOn ? "ON" : "OFF";
-    uiVision.textContent = visionModes[visionIndex];
-
-    if(lockedTarget){
-      lockDot.classList.remove('bad');
-      lockTxt.textContent = `LOCK: ${lockedTarget.icon.name}`;
-    } else {
-      lockDot.classList.add('bad');
-      lockTxt.textContent = `No lock`;
-    }
-
-    if(range){
-      uiRange.textContent = `${Math.round(range)} m`;
-    }
-    if(tof){
-      uiTof.textContent = `${tof.toFixed(2)} s`;
-    }
-  }
-
-  // Vision effects
-  function applyVisionPost(){
-    const mode = visionModes[visionIndex];
-
-    if(mode === "Normal") return;
-
-    ctx.save();
-    ctx.globalCompositeOperation = 'source-atop';
-
-    if(mode === "Night Vision"){
-      // green wash + slight noise
-      ctx.globalAlpha = 0.22;
-      ctx.fillStyle = 'rgb(40,255,120)';
-      ctx.fillRect(0,0,W,H);
-
-      // vignette edges
-      ctx.globalAlpha = 0.25;
-      const g = ctx.createRadialGradient(W/2,H/2, Math.min(W,H)*0.15, W/2,H/2, Math.min(W,H)*0.62);
-      g.addColorStop(0,'rgba(0,0,0,0)');
-      g.addColorStop(1,'rgba(0,0,0,0.55)');
-      ctx.fillStyle = g;
-      ctx.fillRect(0,0,W,H);
-
-      // scanlines
-      ctx.globalAlpha = 0.10;
-      ctx.fillStyle = 'rgba(0,0,0,0.7)';
-      for(let y=0;y<H;y+=6*DPR){
-        ctx.fillRect(0,y,W,1*DPR);
+    // find nearest alive target within assist radius (in world space)
+    let best=null, bestD=Infinity;
+    for(const c of chars){
+      if(!c.alive) continue;
+      const d = dist(aimWraw.x, aimWraw.y, c.x, c.y);
+      if(d < AIM_ASSIST_RADIUS && d < bestD){
+        best=c; bestD=d;
       }
     }
+    if(!best) return aimWraw;
 
-    if(mode === "Thermal"){
-      // thermal overlay: warm tint + contrast impression
-      ctx.globalAlpha = 0.14;
-      ctx.fillStyle = 'rgb(255,120,30)';
-      ctx.fillRect(0,0,W,H);
+    // stronger assist when steady (Shift)
+    const strength = steady ? 0.35 : 0.22;
+    return {
+      x: lerp(aimWraw.x, best.x, strength),
+      y: lerp(aimWraw.y, best.y, strength),
+    };
+  }
 
-      // cool vignette
-      ctx.globalAlpha = 0.22;
-      const g2 = ctx.createRadialGradient(W/2,H/2, Math.min(W,H)*0.14, W/2,H/2, Math.min(W,H)*0.64);
-      g2.addColorStop(0,'rgba(0,0,0,0)');
-      g2.addColorStop(1,'rgba(0,0,0,0.65)');
-      ctx.fillStyle = g2;
-      ctx.fillRect(0,0,W,H);
+  // Wind/gust mild
+  function updateWind(now){
+    wind.dir += Math.sin(now*0.00012) * 0.0007;
+    if(!gust.active && Math.random() < 0.0018){
+      gust.active = true;
+      gust.extra = rand(1.5, 4.5);
+      gust.until = now + rand(900, 1900);
     }
-
-    ctx.restore();
+    if(gust.active && now >= gust.until){
+      gust.active=false; gust.extra=0;
+    }
+    uiWind.textContent = `${effectiveWind().toFixed(1)} kt`;
   }
 
   // Background
-  function drawBackground(now){
+  function drawBackground(){
+    ctx.clearRect(0,0,W,H);
+    const g = ctx.createRadialGradient(W*0.35,H*0.30, 10, W*0.35,H*0.30, Math.max(W,H)*0.9);
+    g.addColorStop(0, 'rgba(16,26,85,1)');
+    g.addColorStop(0.45,'rgba(7,10,20,1)');
+    g.addColorStop(1,'rgba(5,6,11,1)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation='lighter';
     for(const s of stars){
       const p = worldToScreen(s.x, s.y);
-      if(p.x<-50||p.y<-50||p.x>W+50||p.y>H+50) continue;
+      if(p.x<-40||p.y<-40||p.x>W+40||p.y>H+40) continue;
       ctx.globalAlpha = s.a;
       ctx.beginPath();
       ctx.arc(p.x, p.y, s.r*DPR, 0, Math.PI*2);
-      ctx.fillStyle = 'rgba(255,255,255,1)';
+      ctx.fillStyle='rgba(255,255,255,1)';
       ctx.fill();
     }
     ctx.restore();
 
-    // nav grid
+    // grid subtle
     ctx.save();
-    ctx.globalAlpha = 0.07;
-    ctx.strokeStyle = 'rgba(255,255,255,1)';
-    ctx.lineWidth = 1*DPR;
-
-    const grid = 120;
+    ctx.globalAlpha=0.06;
+    ctx.strokeStyle='rgba(255,255,255,1)';
+    ctx.lineWidth=1*DPR;
+    const grid=150;
     const tl = screenToWorld(0,0);
     const br = screenToWorld(W,H);
-    const startX = Math.floor(tl.x / grid) * grid;
-    const endX   = Math.ceil(br.x / grid) * grid;
-    const startY = Math.floor(tl.y / grid) * grid;
-    const endY   = Math.ceil(br.y / grid) * grid;
-
-    for(let x=startX; x<=endX; x+=grid){
-      const a = worldToScreen(x, startY);
-      const b = worldToScreen(x, endY);
+    const startX = Math.floor(tl.x/grid)*grid;
+    const endX = Math.ceil(br.x/grid)*grid;
+    const startY = Math.floor(tl.y/grid)*grid;
+    const endY = Math.ceil(br.y/grid)*grid;
+    for(let x=startX;x<=endX;x+=grid){
+      const a=worldToScreen(x,startY), b=worldToScreen(x,endY);
       ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
     }
-    for(let y=startY; y<=endY; y+=grid){
-      const a = worldToScreen(startX, y);
-      const b = worldToScreen(endX, y);
+    for(let y=startY;y<=endY;y+=grid){
+      const a=worldToScreen(startX,y), b=worldToScreen(endX,y);
       ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
     }
     ctx.restore();
   }
 
-  // Aim sway + breath hold steady
-  function getSwayOffset(now){
-    if(!swayOn) return { x:0, y:0 };
+  // Draw characters (COD readability + reactions)
+  function updateAndDrawChars(now){
+    const aimW = getAimedWorldWithAssist(now);
+    uiRange.textContent = `${Math.round(dist(aimW.x, aimW.y, cam.x, cam.y))} m`;
 
-    // base sway
-    let ox = Math.sin(now*sway.s1) * sway.a * DPR;
-    let oy = Math.cos(now*sway.s2) * sway.b * DPR;
-
-    // gust increases sway a bit
-    const g = gust.active ? (gust.extra / 12) : 0;
-    ox *= (1 + g*0.35);
-    oy *= (1 + g*0.35);
-
-    // breath hold reduces sway if stamina allows
-    const canHold = holdingBreath && breath > breathMinToHold;
-    if(canHold){
-      ox *= 0.35;
-      oy *= 0.35;
-    }
-    return { x: ox, y: oy };
-  }
-
-  function getEffectiveAimWorld(now){
-    const sw = getSwayOffset(now);
-    const sx = cursor.x + sw.x;
-    const sy = cursor.y + sw.y;
-    return screenToWorld(sx, sy);
-  }
-
-  // Characters
-  function drawCharacters(now, aimW){
-    let locked=null, best=Infinity;
+    let lock=null, lockD=1e9;
+    const tgtId = currentTargetId();
 
     for(const c of chars){
       if(!c.alive) continue;
 
-      // drift
-      const dt = 0.016;
-      c.baseX += c.vx * dt;
-      c.baseY += c.vy * dt;
+      // movement
+      c.x += c.vx * 0.016;
+      c.y += c.vy * 0.016;
 
-      if(c.baseX < 80 || c.baseX > WORLD_W-80) c.vx *= -1;
-      if(c.baseY < 80 || c.baseY > WORLD_H-80) c.vy *= -1;
-      c.baseX = clamp(c.baseX, 80, WORLD_W-80);
-      c.baseY = clamp(c.baseY, 80, WORLD_H-80);
+      if(c.x<80||c.x>WORLD_W-80) c.vx*=-1;
+      if(c.y<80||c.y>WORLD_H-80) c.vy*=-1;
+      c.x=clamp(c.x,80,WORLD_W-80);
+      c.y=clamp(c.y,80,WORLD_H-80);
 
+      // dance cue when ADS and near crosshair
       const d = dist(aimW.x, aimW.y, c.x, c.y);
-      const danceTrigger = hoverAssist ? (d < HOVER_RADIUS*1.25) : (d < HOVER_RADIUS);
-      c.dance += ((danceTrigger?1:0) - c.dance) * 0.15;
+      const wantDance = (scoped && d < DANCE_RADIUS) ? 1 : 0;
+      c.dance += (wantDance - c.dance) * 0.22;
 
-      const phase = (now*0.006*c.bob + c.seed) % (Math.PI*2);
-      const wigX = Math.sin(phase*2.4) * DANCE_STRENGTH * c.dance;
-      const wigY = Math.cos(phase*2.0) * DANCE_STRENGTH * c.dance;
-      const idle = Math.sin(phase) * 1.5;
+      // wiggle
+      const phase = (now*0.007 + c.seed) % (Math.PI*2);
+      const wig = c.dance * 8;
+      const dx = Math.sin(phase*3.2) * wig;
+      const dy = Math.cos(phase*2.5) * wig;
 
-      c.x = c.baseX + wigX;
-      c.y = c.baseY + wigY + idle;
+      const px = c.x + dx;
+      const py = c.y + dy;
 
-      if(d < HOVER_RADIUS && d < best){
-        best = d; locked = c;
+      if(scoped && d < DANCE_RADIUS && d < lockD){
+        lock=c; lockD=d;
       }
-    }
 
-    // draw
-    for(const c of chars){
-      if(!c.alive && c.hitFlash <= 0.01) continue;
-
-      const p = worldToScreen(c.x, c.y);
-      if(p.x<-80||p.y<-80||p.x>W+80||p.y>H+80) continue;
-
-      const size = CHAR_SIZE * c.scale * DPR * zoom;
-      c.hitFlash *= 0.88;
-
-      const alpha = c.alive ? 1 : Math.max(0, c.hitFlash);
+      const p = worldToScreen(px, py);
+      const size = CHAR_SIZE * c.scale * DPR * (0.88 + 0.12*zoom);
 
       ctx.save();
-      ctx.globalAlpha = alpha;
-
-      let hue = c.icon.hue;
-      // thermal bias makes “hot” items pop a bit warmer
-      if(visionModes[visionIndex] === "Thermal"){
-        hue = clamp(hue + 10, 0, 360);
-      }
-
-      ctx.shadowColor = `hsla(${hue}, 90%, 65%, 0.65)`;
-      ctx.shadowBlur = 14 * DPR;
-
       ctx.translate(p.x, p.y);
-      const rot = (Math.sin((now*0.008)+c.seed)*0.12) * c.dance;
-      ctx.rotate(rot);
 
+      // base color
+      const hue = c.icon.hue;
+      ctx.shadowColor = `hsla(${hue}, 90%, 65%, 0.55)`;
+      ctx.shadowBlur = 12 * DPR;
+
+      // body diamond
       ctx.beginPath();
-      ctx.moveTo(0, -size*1.2);
-      ctx.lineTo(size*1.1, 0);
-      ctx.lineTo(0, size*1.2);
-      ctx.lineTo(-size*1.1, 0);
+      ctx.moveTo(0, -size*1.35);
+      ctx.lineTo(size*1.25, 0);
+      ctx.lineTo(0, size*1.35);
+      ctx.lineTo(-size*1.25, 0);
       ctx.closePath();
       ctx.fillStyle = `hsla(${hue}, 85%, 55%, 0.95)`;
       ctx.fill();
 
-      ctx.shadowBlur = 0;
-      ctx.lineWidth = 1.2 * DPR;
-      ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+      // outline
+      ctx.shadowBlur=0;
+      ctx.lineWidth=1.2*DPR;
+      ctx.strokeStyle='rgba(0,0,0,0.55)';
       ctx.stroke();
 
-      ctx.globalAlpha = alpha * 0.9;
-      ctx.fillStyle = 'rgba(255,255,255,0.86)';
-      ctx.font = `${Math.max(10, 12*DPR)}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace`;
+      // glyph
+      ctx.fillStyle='rgba(255,255,255,0.90)';
+      ctx.font = `${Math.max(12, 14*DPR)}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace`;
       ctx.textAlign='center';
       ctx.textBaseline='middle';
       ctx.fillText(c.icon.glyph, 0, 0);
 
-      if(c.dance > 0.2 && c.alive){
-        ctx.globalAlpha = alpha * 0.75;
-        ctx.strokeStyle = `hsla(${hue}, 90%, 70%, 0.7)`;
-        ctx.lineWidth = 1.2*DPR;
+      // dance ring when locked-ish
+      if(c.dance > 0.2){
+        ctx.globalAlpha = 0.85;
+        ctx.strokeStyle = 'rgba(117,255,186,0.70)';
+        ctx.lineWidth = 1.5*DPR;
         ctx.beginPath();
-        ctx.arc(0, 0, size*1.55, -0.4, 0.4);
+        ctx.arc(0,0, size*1.9, -0.6, 0.6);
+        ctx.stroke();
+      }
+
+      // objective ping (COD: helpful but not too easy when ADS)
+      if(tgtId !== null && c.id === tgtId){
+        ctx.globalAlpha = scoped ? 0.0 : 0.22;
+        ctx.strokeStyle = 'rgba(255,207,90,0.95)';
+        ctx.lineWidth = 2.1*DPR;
+        ctx.beginPath();
+        ctx.arc(0,0, size*2.4, 0, Math.PI*2);
         ctx.stroke();
       }
 
       ctx.restore();
     }
 
-    updateHUD(locked, 0, 0);
-    return locked;
+    return lock;
   }
 
-  // Ballistics helpers
-  function drawBallisticHelpers(now, aimW){
-    const range = dist(aimW.x, aimW.y, cam.x, cam.y);
-    const tof = calcTof(range);
-
-    uiCoord.textContent = `X: ${Math.round(aimW.x)}  Y: ${Math.round(aimW.y)}`;
-    uiRange.textContent = `${Math.round(range)} m`;
-    uiTof.textContent   = `${tof.toFixed(2)} s`;
-
-    let ang = Math.atan2(aimW.y - cam.y, aimW.x - cam.x);
-    let deg = (90 - (ang * 180/Math.PI));
-    deg = (deg % 360 + 360) % 360;
-    uiBearing.textContent = `${String(Math.round(deg)).padStart(3,'0')}°`;
-
-    // lead / impact dot
-    const impactW = leadDotWorld(aimW, tof);
-    const impactS = worldToScreen(impactW.x, impactW.y);
-
-    ctx.save();
-    ctx.globalAlpha = 0.9;
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-    ctx.fillStyle   = 'rgba(255,255,255,0.85)';
-    ctx.lineWidth   = 1.4*DPR;
-
-    ctx.beginPath();
-    ctx.arc(impactS.x, impactS.y, 3.0*DPR, 0, Math.PI*2);
-    ctx.fill();
-
-    ctx.globalAlpha = 0.55;
-    ctx.beginPath();
-    ctx.arc(impactS.x, impactS.y, 11.0*DPR, 0, Math.PI*2);
-    ctx.stroke();
-
-    // faint vector
-    const aimS = worldToScreen(aimW.x, aimW.y);
-    ctx.globalAlpha = 0.25;
-    ctx.beginPath();
-    ctx.moveTo(aimS.x, aimS.y);
-    ctx.lineTo(impactS.x, impactS.y);
-    ctx.stroke();
-
-    ctx.restore();
-
-    return { range, tof, impactW };
-  }
-
-  // Bullets/tracers
+  // Tracers
   function drawBullets(now){
     for(const b of bullets){
       if(!b.alive) continue;
-      const age = (now - b.t0) / 1000;
+      const age = (now - b.t0)/1000;
       const t = clamp(age / b.tof, 0, 1);
-
       const x = b.aimW.x + (b.impactW.x - b.aimW.x) * t;
       const y = b.aimW.y + (b.impactW.y - b.aimW.y) * t;
 
-      const p = worldToScreen(x, y);
+      const p = worldToScreen(x,y);
       const a = worldToScreen(b.aimW.x, b.aimW.y);
 
       ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = 0.55;
-      ctx.strokeStyle = 'rgba(255,255,255,1)';
-      ctx.lineWidth = 2.0*DPR;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
-
-      ctx.globalAlpha = 0.85;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 2.6*DPR, 0, Math.PI*2);
-      ctx.fillStyle = 'rgba(255,255,255,1)';
-      ctx.fill();
+      ctx.globalCompositeOperation='lighter';
+      ctx.globalAlpha=0.50;
+      ctx.strokeStyle='rgba(255,255,255,1)';
+      ctx.lineWidth=2.0*DPR;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(p.x,p.y); ctx.stroke();
+      ctx.globalAlpha=0.85;
+      ctx.fillStyle='rgba(255,255,255,1)';
+      ctx.beginPath(); ctx.arc(p.x,p.y,2.6*DPR,0,Math.PI*2); ctx.fill();
       ctx.restore();
 
       if(age >= b.tof){
-        b.alive = false;
+        b.alive=false;
         resolveBullet(b);
       }
     }
-    for(let i=bullets.length-1;i>=0;i--){
-      if(!bullets[i].alive) bullets.splice(i,1);
-    }
+    for(let i=bullets.length-1;i>=0;i--) if(!bullets[i].alive) bullets.splice(i,1);
   }
 
-  // Scope overlay (with sway + hit marker)
-  function drawScopeOverlay(now, lockedTarget){
-    const swayOff = getSwayOffset(now);
-
-    const cx = cursor.x, cy = cursor.y;
-    const aimCx = cursor.x + swayOff.x;
-    const aimCy = cursor.y + swayOff.y;
-
-    const r = (SCOPE_RADIUS_PX_BASE / Math.sqrt(zoom)) * DPR;
-
+  // Vision post (optional)
+  function applyVisionPost(){
+    const mode = visionModes[visionIndex];
+    if(mode==="Normal") return;
     ctx.save();
-
-    // Outside darkness
-    ctx.globalAlpha = 0.78;
-    ctx.fillStyle = 'rgba(0,0,0,1)';
-    ctx.fillRect(0,0,W,H);
-
-    // Punch scope hole
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI*2);
-    ctx.fill();
-    ctx.globalCompositeOperation = 'source-over';
-
-    // Scope rim
-    ctx.globalAlpha = 1;
-    ctx.lineWidth = 3.0*DPR;
-    ctx.strokeStyle = 'rgba(255,255,255,0.22)';
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI*2);
-    ctx.stroke();
-
-    ctx.lineWidth = 1.2*DPR;
-    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
-    ctx.beginPath();
-    ctx.arc(cx, cy, r-3*DPR, 0, Math.PI*2);
-    ctx.stroke();
-
-    // Reticle at true aim (sway included)
-    ctx.save();
-    ctx.translate(aimCx, aimCy);
-
-    const L = r - 16*DPR;
-    const G = CROSS_GAP * DPR;
-
-    ctx.strokeStyle = lockedTarget ? 'rgba(117,255,186,0.85)' : 'rgba(233,238,252,0.78)';
-    ctx.lineWidth = (1.6 * DPR) / Math.max(1, Math.sqrt(zoom));
-
-    ctx.beginPath();
-    ctx.moveTo(-L, 0); ctx.lineTo(-G, 0);
-    ctx.moveTo(G, 0);  ctx.lineTo(L, 0);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(0, -L); ctx.lineTo(0, -G);
-    ctx.moveTo(0, G);  ctx.lineTo(0, L);
-    ctx.stroke();
-
-    ctx.fillStyle = lockedTarget ? 'rgba(117,255,186,0.95)' : 'rgba(233,238,252,0.85)';
-    ctx.beginPath();
-    ctx.arc(0,0, 2.2*DPR, 0, Math.PI*2);
-    ctx.fill();
-
-    if(lockedTarget){
-      ctx.strokeStyle = 'rgba(117,255,186,0.85)';
-      ctx.lineWidth = 1.6*DPR;
-      const b = 16*DPR, d = 38*DPR;
-      ctx.beginPath();
-      ctx.moveTo(-d, -d+b); ctx.lineTo(-d, -d); ctx.lineTo(-d+b, -d);
-      ctx.moveTo(d-b, -d);  ctx.lineTo(d, -d);  ctx.lineTo(d, -d+b);
-      ctx.moveTo(d, d-b);   ctx.lineTo(d, d);   ctx.lineTo(d-b, d);
-      ctx.moveTo(-d+b, d);  ctx.lineTo(-d, d);  ctx.lineTo(-d, d-b);
-      ctx.stroke();
+    ctx.globalCompositeOperation='source-atop';
+    if(mode==="Night Vision"){
+      ctx.globalAlpha=0.22;
+      ctx.fillStyle='rgb(40,255,120)';
+      ctx.fillRect(0,0,W,H);
+      ctx.globalAlpha=0.10;
+      ctx.fillStyle='rgba(0,0,0,0.65)';
+      for(let y=0;y<H;y+=6*DPR) ctx.fillRect(0,y,W,1*DPR);
     }
-
+    if(mode==="Thermal"){
+      ctx.globalAlpha=0.14;
+      ctx.fillStyle='rgb(255,120,30)';
+      ctx.fillRect(0,0,W,H);
+      ctx.globalAlpha=0.18;
+      const g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.18,W/2,H/2,Math.min(W,H)*0.72);
+      g.addColorStop(0,'rgba(0,0,0,0)');
+      g.addColorStop(1,'rgba(0,0,0,0.65)');
+      ctx.fillStyle=g;
+      ctx.fillRect(0,0,W,H);
+    }
     ctx.restore();
+  }
 
-    // Hit marker overlay inside scope
-    if(hitMarker.on && now <= hitMarker.until){
+  // COD reticle + hitmarker + killfeed
+  function drawHUDOverlay(now, lock){
+    // If not scoped, draw simple crosshair
+    if(!scoped){
+      const cx = cursor.x, cy = cursor.y;
       ctx.save();
-      ctx.globalAlpha = 0.95;
-      ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+      ctx.globalAlpha = 0.80;
+      ctx.strokeStyle = 'rgba(233,238,252,0.72)';
       ctx.lineWidth = 2.0*DPR;
-
-      // draw an "X" centered at aim point (feels like hit confirm)
-      ctx.translate(aimCx, aimCy);
-      const s = 10*DPR;
+      const L = 14*DPR, G = 6*DPR;
       ctx.beginPath();
-      ctx.moveTo(-s,-s); ctx.lineTo(s,s);
-      ctx.moveTo(s,-s);  ctx.lineTo(-s,s);
+      ctx.moveTo(cx-L, cy); ctx.lineTo(cx-G, cy);
+      ctx.moveTo(cx+G, cy); ctx.lineTo(cx+L, cy);
+      ctx.moveTo(cx, cy-L); ctx.lineTo(cx, cy-G);
+      ctx.moveTo(cx, cy+G); ctx.lineTo(cx, cy+L);
       ctx.stroke();
       ctx.restore();
     } else {
-      hitMarker.on = false;
+      // Scope overlay
+      const cx = cursor.x, cy = cursor.y;
+      const r = (SCOPE_R_BASE / Math.sqrt(zoom)) * DPR;
+
+      ctx.save();
+      ctx.globalAlpha=0.74;
+      ctx.fillStyle='rgba(0,0,0,1)';
+      ctx.fillRect(0,0,W,H);
+
+      ctx.globalCompositeOperation='destination-out';
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+      ctx.globalCompositeOperation='source-over';
+
+      // rim
+      ctx.globalAlpha=1;
+      ctx.lineWidth=3*DPR;
+      ctx.strokeStyle='rgba(255,255,255,0.22)';
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
+
+      // reticle
+      ctx.save();
+      ctx.translate(cx,cy);
+      ctx.strokeStyle = lock ? 'rgba(117,255,186,0.90)' : 'rgba(233,238,252,0.78)';
+      ctx.lineWidth = 1.8*DPR;
+      const L = r - 18*DPR;
+      const G = 16*DPR;
+      ctx.beginPath();
+      ctx.moveTo(-L,0); ctx.lineTo(-G,0);
+      ctx.moveTo(G,0);  ctx.lineTo(L,0);
+      ctx.moveTo(0,-L); ctx.lineTo(0,-G);
+      ctx.moveTo(0,G);  ctx.lineTo(0,L);
+      ctx.stroke();
+
+      ctx.fillStyle = lock ? 'rgba(117,255,186,0.98)' : 'rgba(233,238,252,0.88)';
+      ctx.beginPath(); ctx.arc(0,0,2.2*DPR,0,Math.PI*2); ctx.fill();
+
+      // hitmarker
+      if(performance.now() <= hitMarkerUntil){
+        ctx.strokeStyle='rgba(255,255,255,0.96)';
+        ctx.lineWidth=2.3*DPR;
+        const s=10*DPR;
+        ctx.beginPath();
+        ctx.moveTo(-s,-s); ctx.lineTo(s,s);
+        ctx.moveTo(s,-s);  ctx.lineTo(-s,s);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // glare
+      ctx.globalAlpha=0.10;
+      ctx.fillStyle='rgba(255,255,255,1)';
+      ctx.beginPath();
+      ctx.arc(cx-r*0.22, cy-r*0.22, r*0.42, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.restore();
     }
 
-    // Glass glare
-    ctx.save();
-    ctx.globalAlpha = 0.10;
-    ctx.fillStyle = 'rgba(255,255,255,1)';
-    ctx.beginPath();
-    ctx.arc(cx - r*0.22, cy - r*0.22, r*0.42, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-
-    ctx.restore();
+    // kill feed text
+    if(performance.now() <= killFeedUntil){
+      ctx.save();
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      const pad = 10*DPR;
+      const text = killFeedText;
+      ctx.font = `${Math.max(12, 14*DPR)}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace`;
+      const tw = ctx.measureText(text).width;
+      const x = W - (tw + pad*2) - 18*DPR;
+      const y = 110*DPR;
+      const h = 28*DPR;
+      roundRect(x, y, tw + pad*2, h, 12*DPR);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(233,238,252,0.92)';
+      ctx.textBaseline='middle';
+      ctx.fillText(text, x+pad, y + h/2);
+      ctx.restore();
+    }
   }
 
-  // Breath update
-  function updateBreath(dt){
-    const canHold = holdingBreath && breath > breathMinToHold;
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
 
-    if(canHold){
-      breath = Math.max(0, breath - breathDrain * (dt/1000));
-      uiBreathTxt.textContent = "HOLDING";
+  // Round/timer loop
+  function startNextRound(){
+    round++;
+    uiRound.textContent = String(round);
+    timeLeft = ROUND_TIME_S;
+
+    // reward ammo a bit
+    reserve = Math.min(180, reserve + 30);
+    mag = MAG_SIZE;
+    reloading = false;
+
+    // respawn some crowd
+    if(chars.filter(c=>c.alive).length < 25){
+      spawn();
     } else {
-      breath = Math.min(1, breath + breathRegen * (dt/1000));
-      uiBreathTxt.textContent = (breath > breathMinToHold) ? "READY" : "RECOVERING";
+      // revive a bunch if needed (keep variety)
+      for(const c of chars){
+        if(Math.random() < 0.35) c.alive = true;
+      }
     }
 
-    const pct = Math.round(breath*100);
-    uiBreathPct.textContent = `${pct}%`;
-    uiBreathBar.style.width = `${pct}%`;
+    buildRoundTargets();
+    updateAmmoUI();
+    toast(`<b>Round ${round}</b> — new targets.`, 1400);
+  }
 
-    // change bar tint by stamina (without hardcoding too much)
-    if(pct < 20){
-      uiBreathBar.style.background = 'rgba(255,106,106,0.75)';
-    } else if(pct < 45){
-      uiBreathBar.style.background = 'rgba(255,207,90,0.75)';
-    } else {
-      uiBreathBar.style.background = 'rgba(117,255,186,0.75)';
-    }
+  function resetRound(){
+    round = 1;
+    timeLeft = ROUND_TIME_S;
+
+    shots=0; kills=0; streak=0; points=0;
+    mag = MAG_SIZE; reserve = RESERVE_START;
+    reloading = false;
+
+    wind.base = rand(WIND_BASE_MIN, WIND_BASE_MAX);
+    wind.dir = Math.random()*Math.PI*2;
+    gust.active=false; gust.extra=0; gust.until=0;
+
+    scoped = false;
+    zoom = ZOOM_OFF; zoomTarget = ZOOM_OFF;
+
+    bullets.length = 0;
+
+    spawn();
+    buildRoundTargets();
+    updateAmmoUI();
+
+    uiRound.textContent = "1";
+    uiScope.textContent = "OFF";
+    uiScore.textContent = "0 / 0";
+    uiStreak.textContent = "0";
+    uiPoints.textContent = "0";
+    toast("Round reset.", 1100);
   }
 
   // Main loop
@@ -1212,73 +998,85 @@
     const dt = Math.min(40, now-last);
     last = now;
 
-    // update gusts and breath
-    updateGust(now, dt);
-    updateBreath(dt);
+    // reload finish
+    if(reloading && now >= reloadUntil){
+      const need = MAG_SIZE - mag;
+      const take = Math.min(need, reserve);
+      mag += take;
+      reserve -= take;
+      reloading = false;
+      updateAmmoUI();
+      beep(520, 0.05, "sine", 0.05);
+      toast("Reload complete.", 900);
+    }
 
-    // decay camera shake
+    // smooth ADS zoom
+    zoom += (zoomTarget - zoom) * ZOOM_SPEED;
+
+    // compute aim world (with assist if ADS)
+    const aimW = getAimedWorldWithAssist(now);
+    cursorWorld.x = aimW.x;
+    cursorWorld.y = aimW.y;
+
+    // camera follows aim (COD)
+    cam.x += (aimW.x - cam.x) * CAM_FOLLOW;
+    cam.y += (aimW.y - cam.y) * CAM_FOLLOW;
+
+    // clamp camera
+    cam.x = clamp(cam.x, 200, WORLD_W-200);
+    cam.y = clamp(cam.y, 200, WORLD_H-200);
+
+    // camera shake
     cam.shakeX *= SHAKE_DECAY;
     cam.shakeY *= SHAKE_DECAY;
 
-    // keep camera in bounds (zoom-aware)
-    cam.x = clamp(cam.x, viewHalfW(), WORLD_W - viewHalfW());
-    cam.y = clamp(cam.y, viewHalfH(), WORLD_H - viewHalfH());
+    // timer
+    timeLeft -= dt/1000;
+    if(timeLeft <= 0){
+      toast(`<b>Time!</b> New round.`, 1200);
+      streak = 0;
+      uiStreak.textContent = "0";
+      startNextRound();
+    }
+    uiTimer.textContent = `${Math.max(0, timeLeft).toFixed(1)}s`;
 
-    ctx.clearRect(0,0,W,H);
+    updateWind(now);
 
-    const aimW = getEffectiveAimWorld(now);
+    drawBackground();
 
-    drawBackground(now);
-
-    // wind vector in view
-    ctx.save();
-    ctx.globalAlpha = 0.22;
-    ctx.strokeStyle = 'rgba(255,255,255,1)';
-    ctx.lineWidth = 2*DPR;
-    const base = worldToScreen(cam.x - viewHalfW() + 90, cam.y - viewHalfH() + 90);
-    const ws = effectiveWindSpeed();
-    const len = (ws/28) * 80 * DPR;
-    ctx.beginPath();
-    ctx.moveTo(base.x, base.y);
-    ctx.lineTo(base.x + Math.cos(wind.dir)*len, base.y + Math.sin(wind.dir)*len);
-    ctx.stroke();
-    ctx.restore();
-
-    const locked = drawCharacters(now, aimW);
-
-    const bh = drawBallisticHelpers(now, aimW);
-    updateHUD(locked, bh.range, bh.tof);
+    // lock: closest target in dance radius
+    let lock = updateAndDrawChars(now);
 
     drawBullets(now);
-
-    // Apply vision post-processing to the scene before scope overlay
     applyVisionPost();
+    drawHUDOverlay(now, lock);
 
-    drawScopeOverlay(now, locked);
-
-    // end condition
-    const remaining = chars.filter(c=>c.alive).length;
-    if(remaining === 0){
-      if(!tick._won){
-        tick._won = true;
-        toast(`All targets cleared. Accuracy: <b>${shots ? Math.round((hits/shots)*100) : 0}%</b>`, 2600);
-      }
-    } else tick._won = false;
-
-    // update wind UI every frame
-    uiWind.textContent = `${effectiveWindSpeed().toFixed(1)} kt`;
+    // UI refresh
+    uiWind.textContent = `${effectiveWind().toFixed(1)} kt`;
+    uiScore.textContent = `${kills} / ${shots}`;
+    uiStreak.textContent = String(streak);
+    uiPoints.textContent = String(points);
+    updateObjectiveUI();
 
     requestAnimationFrame(tick);
   }
-  requestAnimationFrame(tick);
 
-  // Start missions
+  // Init
   function init(){
-    buildMissions();
-    renderMissionUI();
-    updateHUD(null, 0, 0);
-    toast(`Wind is <b>${effectiveWindSpeed().toFixed(1)} kt</b>. Use lead dot for drift.`);
-    toast(`Vision <b>N</b>. Breath-hold <b>Shift</b>. Zoom <b>Z</b>. Gusts will test you.`, 2400);
+    spawn();
+    buildRoundTargets();
+    updateAmmoUI();
+    uiRound.textContent = "1";
+    uiTimer.textContent = `${ROUND_TIME_S.toFixed(1)}s`;
+    uiScope.textContent = "OFF";
+    uiWind.textContent = `${effectiveWind().toFixed(1)} kt`;
+    uiScore.textContent = "0 / 0";
+    uiStreak.textContent = "0";
+    uiPoints.textContent = "0";
+
+    toast(`COD-style: <b>Right-click ADS</b>, targets dance when you’re on them.`, 2400);
+    toast(`Reload with <b>R</b>. Rounds are <b>${ROUND_TIME_S}s</b> with ${TARGETS_PER_ROUND} objectives.`, 2400);
+    requestAnimationFrame(tick);
   }
   init();
 
