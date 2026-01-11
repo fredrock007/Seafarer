@@ -3,150 +3,174 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Sea Farer — COD Style Scope Hunt</title>
+  <title>Sea Farer — Modern Warfare Scope Hunt</title>
   <style>
     :root{
-      --hud:#e9eefc;
-      --hud2:#aab7ff;
-      --ok:#75ffba;
-      --bad:#ff6a6a;
-      --warn:#ffcf5a;
-      --glass: rgba(255,255,255,0.08);
+      --hud: rgba(235,240,255,0.92);
+      --hud2: rgba(235,240,255,0.72);
       --line: rgba(255,255,255,0.16);
+      --glass: rgba(255,255,255,0.07);
+      --ok: rgba(120,255,190,0.95);
+      --warn: rgba(255,210,90,0.95);
+      --bad: rgba(255,106,106,0.95);
     }
-    html,body{ height:100%; margin:0; overflow:hidden; background:#05060b; color:var(--hud);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+
+    html,body{height:100%; margin:0; overflow:hidden; background:#05060b; color:var(--hud);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       user-select:none; -webkit-user-select:none; touch-action:none;
     }
-    #wrap{ position:relative; width:100vw; height:100vh; }
-    canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+    #wrap{position:relative; width:100vw; height:100vh;}
+    canvas{position:absolute; inset:0; width:100%; height:100%; display:block;}
 
-    .hud{
-      position:absolute; left:14px; top:14px; pointer-events:none;
-      display:flex; flex-direction:column; gap:10px; max-width:420px;
+    /* MW-like minimal HUD */
+    .mw-top{
+      position:absolute; left:14px; top:12px;
+      pointer-events:none;
+      display:flex; flex-direction:column; gap:8px;
+      width:min(380px, calc(100vw - 28px));
     }
-    .panel{
-      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
-      border: 1px solid rgba(255,255,255,0.14);
-      border-radius:14px;
-      padding:10px 12px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
-      backdrop-filter: blur(10px);
-    }
-    .title{ font-weight:800; letter-spacing:0.6px; font-size:12px; color:var(--hud2); text-transform:uppercase; margin-bottom:6px; }
-    .row{ display:flex; justify-content:space-between; gap:12px; font-size:12px; line-height:1.35; }
-    .row b{ color:var(--hud); }
-    .hint{ font-size:12px; color: rgba(233,238,252,0.78); margin-top:8px; }
-
-    .toast{
-      position:absolute; right:14px; top:14px; width:min(520px, calc(100vw - 28px));
-      display:flex; flex-direction:column; gap:10px; align-items:flex-end; pointer-events:none;
-    }
-    .msg{
-      background: rgba(0,0,0,0.44);
+    .mw-card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
       border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 10px 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 12px 46px rgba(0,0,0,0.38);
+    }
+    .mw-title{
+      display:flex; align-items:center; justify-content:space-between;
+      font-size:12px; letter-spacing:0.6px; text-transform:uppercase;
+      color: var(--hud2); font-weight:800;
+      margin-bottom:6px;
+    }
+    .mw-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:6px 10px;
+      font-size:12px;
+      color: var(--hud2);
+      line-height:1.35;
+    }
+    .mw-grid b{ color: var(--hud); font-weight:800; }
+
+    .mw-bottom{
+      position:absolute; left:14px; bottom:14px;
+      pointer-events:none;
+      display:flex; gap:10px; flex-wrap:wrap;
+      width:min(520px, calc(100vw - 28px));
+    }
+    .pill{
+      background: rgba(0,0,0,0.38);
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:999px;
+      padding:8px 12px;
+      backdrop-filter: blur(10px);
+      color: var(--hud2);
+      font-size:12px;
+      display:flex; gap:10px; align-items:center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+    }
+    .pill b{ color: var(--hud); }
+
+    /* Kill banner (MW-ish) */
+    .banner{
+      position:absolute;
+      left:50%; transform:translateX(-50%);
+      bottom:84px;
+      pointer-events:none;
+      opacity:0;
+      transition: opacity 160ms ease, transform 160ms ease;
+      background: rgba(0,0,0,0.45);
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius: 14px;
+      padding:10px 14px;
+      backdrop-filter: blur(12px);
+      color: var(--hud);
+      font-size:13px;
+      letter-spacing:0.2px;
+      box-shadow: 0 12px 46px rgba(0,0,0,0.45);
+      white-space:nowrap;
+    }
+    .banner.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(-4px);
+    }
+    .banner small{ color: var(--hud2); font-size:12px; margin-left:10px; }
+
+    /* Right-side tiny tips */
+    .tips{
+      position:absolute; right:14px; top:12px; width:min(520px, calc(100vw - 28px));
+      pointer-events:none;
+      display:flex; flex-direction:column; gap:10px; align-items:flex-end;
+    }
+    .tip{
+      background: rgba(0,0,0,0.44);
+      border:1px solid rgba(255,255,255,0.12);
       border-radius: 14px;
       padding:10px 12px;
       backdrop-filter: blur(10px);
       box-shadow: 0 10px 40px rgba(0,0,0,0.35);
       font-size:12px;
-      color: rgba(233,238,252,0.90);
+      color: var(--hud2);
       max-width: 520px;
     }
-    .msg b{ color: var(--warn); }
+    .tip b{ color: var(--warn); }
 
+    /* Buttons (optional, keep clean) */
     .controls{
-      position:absolute; right:14px; bottom:14px; width:min(520px, calc(100vw - 28px));
+      position:absolute; right:14px; bottom:14px;
       pointer-events:auto;
     }
+    .rowbtn{ display:flex; gap:10px; flex-wrap:wrap; }
     button{
       appearance:none; border:none; cursor:pointer;
       border-radius:12px; padding:10px 12px;
       background: rgba(255,255,255,0.10);
       color: var(--hud);
       border: 1px solid rgba(255,255,255,0.14);
-      font-weight:750; letter-spacing:0.2px;
+      font-weight:800; letter-spacing:0.2px;
     }
     button:hover{ background: rgba(255,255,255,0.14); }
-    .btnRow{ display:flex; gap:10px; flex-wrap:wrap; }
-    .mini{ font-size:12px; opacity:0.92; color: rgba(233,238,252,0.80); }
-    .kbd{
-      font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
-      background: rgba(255,255,255,0.10);
-      border:1px solid rgba(255,255,255,0.10);
-      padding:2px 6px; border-radius:8px; color: rgba(233,238,252,0.92);
-      white-space:nowrap;
-    }
-
-    .centerHUD{
-      position:absolute; left:50%; transform:translateX(-50%);
-      bottom:14px; pointer-events:none;
-      width:min(640px, calc(100vw - 28px));
-      display:flex; gap:10px; justify-content:center; align-items:center;
-    }
-    .pill{
-      background: rgba(0,0,0,0.38);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 999px;
-      padding:8px 12px;
-      backdrop-filter: blur(10px);
-      font-size:12px;
-      color: rgba(233,238,252,0.90);
-      display:flex; gap:10px; align-items:center;
-    }
-    .pill b{ color: var(--hud); }
   </style>
 </head>
 <body>
 <div id="wrap">
   <canvas id="c"></canvas>
 
-  <div class="hud">
-    <div class="panel">
-      <div class="title">Sea Farer — COD Style Hunt</div>
-      <div class="row"><span>Round</span><b id="roundTxt">1</b></div>
-      <div class="row"><span>Timer</span><b id="timerTxt">60.0s</b></div>
-
-      <div class="row"><span>Objective</span><b id="obj">—</b></div>
-      <div class="row"><span>Hint (approx coords)</span><b id="hint">—</b></div>
-
-      <div class="row"><span>ADS / Scope</span><b id="scopeTxt">OFF</b></div>
-      <div class="row"><span>Ammo</span><b id="ammoTxt">30 / 90</b></div>
-      <div class="row"><span>Reload</span><b id="reloadTxt">READY</b></div>
-
-      <div class="row"><span>Wind</span><b id="wind">0.0 kt</b></div>
-      <div class="row"><span>Range</span><b id="range">0 m</b></div>
-
-      <div class="row"><span>Kills / Shots</span><b id="score">0 / 0</b></div>
-      <div class="row"><span>Streak</span><b id="streak">0</b></div>
-
-      <div class="hint">
-        <b>COD controls:</b><br/>
-        Aim with mouse/trackpad • <b>Right-click</b> ADS • <b>Left-click</b> shoot • <b>R</b> reload<br/>
-        <span class="kbd">N</span> vision (optional) • <span class="kbd">Shift</span> steady (small) • <span class="kbd">Esc</span> reset round
+  <div class="mw-top">
+    <div class="mw-card">
+      <div class="mw-title">
+        <span>Sea Farer — Modern Warfare</span>
+        <span id="adsTxt">ADS: OFF</span>
+      </div>
+      <div class="mw-grid">
+        <div>Round <b id="roundTxt">1</b></div>
+        <div>Timer <b id="timerTxt">60.0s</b></div>
+        <div>Objective <b id="objTxt">—</b></div>
+        <div>Hint <b id="hintTxt">—</b></div>
+        <div>Ammo <b id="ammoTxt">30 / 90</b></div>
+        <div>Wind <b id="windTxt">0.0 kt</b></div>
+        <div>Range <b id="rangeTxt">0 m</b></div>
+        <div>Points <b id="pointsTxt">0</b></div>
       </div>
     </div>
   </div>
 
-  <div class="toast" id="toast"></div>
-
-  <div class="centerHUD">
-    <div class="pill">Aim Assist: <b>ON (ADS)</b></div>
-    <div class="pill">Targets this round: <b id="targetsLeft">3</b></div>
-    <div class="pill">Points: <b id="pointsTxt">0</b></div>
+  <div class="mw-bottom">
+    <div class="pill">Kills <b id="killsTxt">0</b> / Shots <b id="shotsTxt">0</b></div>
+    <div class="pill">Streak <b id="streakTxt">0</b></div>
+    <div class="pill">Targets left <b id="leftTxt">3</b></div>
   </div>
 
+  <div class="banner" id="banner">Target Down <small id="bannerSub">+100</small></div>
+
+  <div class="tips" id="tips"></div>
+
   <div class="controls">
-    <div class="panel">
-      <div class="title">Quick Buttons</div>
-      <div class="mini">
-        Mobile: <b>Long-press</b> ADS • Tap shoot • Two-finger tap reload
-      </div>
-      <div class="btnRow" style="margin-top:10px;">
-        <button id="resetBtn">Reset Round</button>
-        <button id="shuffleBtn">Shuffle Crowd</button>
-        <button id="visionBtn">Vision: Normal</button>
-      </div>
+    <div class="rowbtn">
+      <button id="resetBtn">Reset</button>
+      <button id="shuffleBtn">Shuffle</button>
+      <button id="visionBtn">Vision: Normal</button>
     </div>
   </div>
 </div>
@@ -156,70 +180,78 @@
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d', { alpha:true });
 
-  const uiRound = document.getElementById('roundTxt');
-  const uiTimer = document.getElementById('timerTxt');
-  const uiObj   = document.getElementById('obj');
-  const uiHint  = document.getElementById('hint');
-  const uiScope = document.getElementById('scopeTxt');
-  const uiAmmo  = document.getElementById('ammoTxt');
-  const uiReload= document.getElementById('reloadTxt');
-  const uiWind  = document.getElementById('wind');
-  const uiRange = document.getElementById('range');
-  const uiScore = document.getElementById('score');
-  const uiStreak= document.getElementById('streak');
-  const uiTargetsLeft = document.getElementById('targetsLeft');
-  const uiPoints = document.getElementById('pointsTxt');
+  // UI
+  const adsTxt = document.getElementById('adsTxt');
+  const roundTxt = document.getElementById('roundTxt');
+  const timerTxt = document.getElementById('timerTxt');
+  const objTxt = document.getElementById('objTxt');
+  const hintTxt = document.getElementById('hintTxt');
+  const ammoTxt = document.getElementById('ammoTxt');
+  const windTxt = document.getElementById('windTxt');
+  const rangeTxt = document.getElementById('rangeTxt');
+  const pointsTxt = document.getElementById('pointsTxt');
 
-  const toastEl = document.getElementById('toast');
+  const killsTxt = document.getElementById('killsTxt');
+  const shotsTxt = document.getElementById('shotsTxt');
+  const streakTxt = document.getElementById('streakTxt');
+  const leftTxt = document.getElementById('leftTxt');
+
+  const banner = document.getElementById('banner');
+  const bannerSub = document.getElementById('bannerSub');
+  const tipsEl = document.getElementById('tips');
+
   const resetBtn = document.getElementById('resetBtn');
   const shuffleBtn = document.getElementById('shuffleBtn');
   const visionBtn = document.getElementById('visionBtn');
 
-  // ===== COD-FEEL CONFIG =====
-  const WORLD_W = 2600;
-  const WORLD_H = 1800;
+  // ===== MW FEEL CONFIG =====
+  const WORLD_W = 2800;
+  const WORLD_H = 1900;
+
   const NUM_CHAR = 95;
-
   const CHAR_SIZE = 15;
-  const HIT_RADIUS = 26;          // forgiving
-  const DANCE_RADIUS = 90;        // clear “you’re on target”
-  const AIM_ASSIST_RADIUS = 120;  // magnet zone (ADS)
 
-  const MUZZLE_V = 900;
-  const MAX_TOF  = 0.9;
+  // More MW-like: less arcade, still playable
+  const HIT_RADIUS = 24;
+  const AIM_ASSIST_RADIUS = 95;     // smaller than arcade
+  const AIM_ASSIST_STRENGTH = 0.16; // subtle magnet
+  const DANCE_RADIUS = 85;          // cue: on-target
 
-  const WIND_KT_TO_DRIFT = 0.28;  // mild (COD-ish)
-  const WIND_BASE_MIN = 6, WIND_BASE_MAX = 14;
+  // Ballistics (mild)
+  const MUZZLE_V = 980;
+  const MAX_TOF  = 0.85;
+  const WIND_KT_TO_DRIFT = 0.30; // drift matters slightly
 
-  // camera follow: COD = tight
-  const CAM_FOLLOW = 0.18;
+  // Camera: tight, MW feel
+  const CAM_FOLLOW = 0.16;
 
-  // ADS smooth zoom
+  // ADS: fast snap
   const ZOOM_OFF = 1.0;
-  const ZOOM_ON  = 3.2;
-  const ZOOM_SPEED = 0.16;        // fast snap
+  const ZOOM_ON  = 3.4;
+  const ZOOM_SPEED = 0.18;
 
-  // reticle/scope
-  const SCOPE_R_BASE = 200;
+  // Sway: MW-ish (small), reduced when holding breath (Shift)
+  const SWAY_MAG = 1.35;
+  const SWAY_SPEED = 0.0016;
 
-  // recoil + shake
-  const SHAKE_ON_SHOT = 6;
+  // Recoil / shake (cleaner than arcade)
+  const SHAKE_ON_SHOT = 5.5;
   const SHAKE_DECAY = 0.86;
 
-  // ammo / reload
+  // Ammo
   const MAG_SIZE = 30;
   const RESERVE_START = 90;
   const RELOAD_MS = 900;
 
-  // round
+  // Round system
   const TARGETS_PER_ROUND = 3;
   const ROUND_TIME_S = 60;
 
-  // Vision (optional)
+  // Vision
   const visionModes = ["Normal","Night Vision","Thermal"];
   let visionIndex = 0;
 
-  // DPR
+  // DPR resize
   let W=0, H=0, DPR=1;
   function resize(){
     DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
@@ -236,9 +268,9 @@
   const dist=(ax,ay,bx,by)=>Math.hypot(ax-bx,ay-by);
   const lerp=(a,b,t)=>a+(b-a)*t;
 
-  // Simple sound via WebAudio (tiny, COD-ish feedback)
+  // Tiny audio (kept subtle)
   let audioCtx = null;
-  function beep(freq=880, dur=0.05, type="square", gain=0.05){
+  function beep(freq=880, dur=0.05, type="square", gain=0.04){
     try{
       if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const o = audioCtx.createOscillator();
@@ -252,11 +284,11 @@
     }catch{}
   }
 
-  function toast(html, ms=1500){
-    const div=document.createElement('div');
-    div.className='msg';
-    div.innerHTML=html;
-    toastEl.appendChild(div);
+  function tip(html, ms=1800){
+    const div = document.createElement('div');
+    div.className='tip';
+    div.innerHTML = html;
+    tipsEl.appendChild(div);
     setTimeout(()=>{
       div.style.transition='opacity 260ms ease, transform 260ms ease';
       div.style.opacity='0';
@@ -265,43 +297,48 @@
     }, ms);
   }
 
+  function showBanner(text, sub="+100", ms=900){
+    banner.textContent = text + " ";
+    bannerSub.textContent = sub;
+    banner.classList.add("show");
+    setTimeout(()=>banner.classList.remove("show"), ms);
+  }
+
   // Cursor
   const cursor = { x: W/2, y: H/2 };
-  const cursorWorld = { x: WORLD_W/2, y: WORLD_H/2 };
 
   // Camera
   const cam = { x: WORLD_W/2, y: WORLD_H/2, shakeX:0, shakeY:0 };
 
-  // ADS/Zoom
-  let scoped = false;
-  let zoom = ZOOM_OFF;
-  let zoomTarget = ZOOM_OFF;
+  // ADS + zoom
+  let scoped=false;
+  let zoom=ZOOM_OFF;
+  let zoomTarget=ZOOM_OFF;
 
-  // Breath/steady (small effect, COD-ish)
-  let steady = false;
+  // Breath hold (Shift) reduces sway + slightly reduces aim assist “fight”
+  let holdBreath=false;
 
   // Wind
-  const wind = { base: rand(WIND_BASE_MIN, WIND_BASE_MAX), dir: Math.random()*Math.PI*2 };
+  const wind = { base: rand(7, 14), dir: Math.random()*Math.PI*2 };
   let gust = { extra:0, until:0, active:false };
-
   function effectiveWind(){ return wind.base + (gust.active ? gust.extra : 0); }
 
-  // Stats
-  let shots=0, kills=0, streak=0, points=0;
-
-  // Ammo
+  // Ammo/reload
   let mag = MAG_SIZE;
   let reserve = RESERVE_START;
-  let reloading = false;
-  let reloadUntil = 0;
+  let reloading=false;
+  let reloadUntil=0;
 
-  // Rounds + targets
-  let round = 1;
-  let timeLeft = ROUND_TIME_S;
-  let roundTargets = []; // array of targetIds
-  let currentTargetIndex = 0;
+  // Score/stats
+  let shots=0, kills=0, streak=0, points=0;
 
-  // World
+  // Round
+  let round=1;
+  let timeLeft=ROUND_TIME_S;
+  let roundTargets=[];
+  let currentTargetIndex=0;
+
+  // World content
   const ICONS = [
     { name:"Pika-ish", glyph:"⚡", hue: 52 },
     { name:"DBZ-ish",  glyph:"✦", hue: 40 },
@@ -313,9 +350,9 @@
     { name:"Skull", glyph:"☠", hue: 350 }
   ];
 
-  let chars = [];
+  let chars=[];
   function spawn(){
-    chars = [];
+    chars=[];
     for(let i=0;i<NUM_CHAR;i++){
       const icon = ICONS[(Math.random()*ICONS.length)|0];
       chars.push({
@@ -326,21 +363,21 @@
         icon,
         seed: Math.random()*9999,
         scale: rand(0.90, 1.25),
-        vx: rand(-24, 24),
-        vy: rand(-18, 18),
+        vx: rand(-22, 22),
+        vy: rand(-16, 16),
         dance: 0
       });
     }
   }
 
-  const stars = new Array(950).fill(0).map(()=>({
+  const stars = new Array(980).fill(0).map(()=>({
     x: Math.random()*WORLD_W,
     y: Math.random()*WORLD_H,
     r: Math.random()*1.6 + 0.25,
     a: Math.random()*0.8 + 0.15
   }));
 
-  // Transform
+  // Transforms
   function worldToScreen(wx, wy){
     const sx = (wx - cam.x) * zoom + (W/(2*DPR));
     const sy = (wy - cam.y) * zoom + (H/(2*DPR));
@@ -362,24 +399,22 @@
   }
   canvas.addEventListener('contextmenu', (e)=>e.preventDefault());
 
+  // Desktop
   canvas.addEventListener('mousemove', (e)=>setCursorFromEvent(e), { passive:true });
   canvas.addEventListener('mousedown', (e)=>{
     setCursorFromEvent(e);
-    if(e.button === 2){ toggleScope(); return; }
-    if(e.button === 0){ shoot(); return; }
+    if(e.button===2){ toggleADS(); return; }
+    if(e.button===0){ shoot(); return; }
   }, { passive:true });
 
   // Mobile: long press ADS, tap shoot, two-finger tap reload
-  let pressTimer = null;
+  let pressTimer=null;
   canvas.addEventListener('touchstart', (e)=>{
     setCursorFromEvent(e);
-    if(e.touches && e.touches.length >= 2){
-      reload();
-      return;
-    }
-    pressTimer = setTimeout(()=>{ toggleScope(); pressTimer=null; }, 330);
+    if(e.touches && e.touches.length>=2){ reload(); return; }
+    pressTimer = setTimeout(()=>{ toggleADS(); pressTimer=null; }, 300);
   }, { passive:false });
-  canvas.addEventListener('touchmove', (e)=>{ setCursorFromEvent(e); }, { passive:false });
+  canvas.addEventListener('touchmove', (e)=>setCursorFromEvent(e), { passive:false });
   canvas.addEventListener('touchend', ()=>{
     if(pressTimer){
       clearTimeout(pressTimer);
@@ -389,84 +424,71 @@
   }, { passive:false });
 
   addEventListener('keydown', (e)=>{
-    const k = e.key.toLowerCase();
+    const k=e.key.toLowerCase();
     if(k==='r') reload();
     if(k==='n') cycleVision();
     if(k==='escape') resetRound();
-    if(e.key === 'Shift') steady = true;
+    if(e.key==='Shift') holdBreath=true;
   });
   addEventListener('keyup', (e)=>{
-    if(e.key === 'Shift') steady = false;
+    if(e.key==='Shift') holdBreath=false;
   });
 
   resetBtn.addEventListener('click', resetRound);
   shuffleBtn.addEventListener('click', ()=>{
     spawn(); buildRoundTargets();
-    toast("Crowd shuffled. Targets re-picked.");
+    tip("Crowd shuffled. Targets updated.", 1400);
   });
   visionBtn.addEventListener('click', cycleVision);
 
-  function toggleScope(){
-    scoped = !scoped;
-    zoomTarget = scoped ? ZOOM_ON : ZOOM_OFF;
-    uiScope.textContent = scoped ? "ON" : "OFF";
-    beep(scoped ? 520 : 420, 0.05, "sine", 0.05);
+  function toggleADS(){
+    scoped=!scoped;
+    zoomTarget=scoped ? ZOOM_ON : ZOOM_OFF;
+    adsTxt.textContent = `ADS: ${scoped ? "ON" : "OFF"}`;
+    beep(scoped ? 520 : 420, 0.05, "sine", 0.04);
   }
+
   function cycleVision(){
     visionIndex = (visionIndex+1) % visionModes.length;
     visionBtn.textContent = `Vision: ${visionModes[visionIndex]}`;
-    toast(`Vision: <b>${visionModes[visionIndex]}</b>`, 900);
+    tip(`Vision: <b>${visionModes[visionIndex]}</b>`, 1000);
   }
 
-  // Round targets
+  // Targets per round
   function quant(v, step){ return Math.round(v/step)*step; }
+
   function buildRoundTargets(){
-    const alive = chars.filter(c=>c.alive);
-    roundTargets = [];
-    currentTargetIndex = 0;
-    // pick 3 unique alive targets
-    const pool = alive.slice();
+    const alive=chars.filter(c=>c.alive);
+    roundTargets=[];
+    currentTargetIndex=0;
+    const pool=alive.slice();
     for(let i=0;i<TARGETS_PER_ROUND && pool.length;i++){
-      const idx = (Math.random()*pool.length)|0;
+      const idx=(Math.random()*pool.length)|0;
       roundTargets.push(pool[idx].id);
       pool.splice(idx,1);
     }
     updateObjectiveUI();
   }
 
-  function currentTargetId(){
-    return roundTargets[currentTargetIndex] ?? null;
-  }
+  function currentTargetId(){ return roundTargets[currentTargetIndex] ?? null; }
 
   function updateObjectiveUI(){
-    const id = currentTargetId();
+    const id=currentTargetId();
     const t = (id===null) ? null : chars.find(c=>c.id===id && c.alive);
     if(!t){
-      uiObj.textContent = "—";
-      uiHint.textContent = "—";
+      objTxt.textContent="—";
+      hintTxt.textContent="—";
+      leftTxt.textContent="0";
       return;
     }
-    uiObj.textContent = `Eliminate: ${t.icon.name}`;
-    uiHint.textContent = `Near X:${quant(t.x, 90)}  Y:${quant(t.y, 90)}`;
-    uiTargetsLeft.textContent = String(roundTargets.length - currentTargetIndex);
+    objTxt.textContent = t.icon.name;
+    hintTxt.textContent = `X:${quant(t.x, 100)} Y:${quant(t.y, 100)}`;
+    leftTxt.textContent = String(roundTargets.length - currentTargetIndex);
   }
 
-  // Ammo UI
+  // UI updates
   function updateAmmoUI(){
-    uiAmmo.textContent = `${mag} / ${reserve}`;
-    uiReload.textContent = reloading ? "RELOADING" : "READY";
-  }
-
-  function reload(){
-    if(reloading) return;
-    if(mag >= MAG_SIZE) { beep(220, 0.06, "square", 0.04); return; }
-    if(reserve <= 0) { toast("No reserve ammo.", 900); beep(160, 0.08, "square", 0.05); return; }
-
-    reloading = true;
-    reloadUntil = performance.now() + RELOAD_MS;
-    updateAmmoUI();
-    toast("Reloading...", 800);
-    beep(300, 0.06, "sine", 0.05);
+    ammoTxt.textContent = `${mag} / ${reserve}`;
   }
 
   // Ballistics
@@ -477,20 +499,48 @@
   function leadDotWorld(aimW, tof){
     const ws = effectiveWind();
     const drift = ws * tof * WIND_KT_TO_DRIFT;
-    return {
-      x: aimW.x + Math.cos(wind.dir)*drift,
-      y: aimW.y + Math.sin(wind.dir)*drift
-    };
+    return { x: aimW.x + Math.cos(wind.dir)*drift, y: aimW.y + Math.sin(wind.dir)*drift };
   }
 
-  const bullets = [];
+  // Aim assist: subtle MW “stickiness” only when ADS
+  function getAimedWorldWithAssist(){
+    const raw = screenToWorld(cursor.x, cursor.y);
+    if(!scoped) return raw;
+
+    let best=null, bestD=Infinity;
+    for(const c of chars){
+      if(!c.alive) continue;
+      const d = dist(raw.x, raw.y, c.x, c.y);
+      if(d < AIM_ASSIST_RADIUS && d < bestD){ best=c; bestD=d; }
+    }
+    if(!best) return raw;
+
+    // Breath hold makes it slightly stronger and steadier
+    const strength = holdBreath ? (AIM_ASSIST_STRENGTH + 0.06) : AIM_ASSIST_STRENGTH;
+    return { x: lerp(raw.x, best.x, strength), y: lerp(raw.y, best.y, strength) };
+  }
+
+  // Reload
+  function reload(){
+    if(reloading) return;
+    if(mag >= MAG_SIZE){ beep(200,0.06,"square",0.04); return; }
+    if(reserve <= 0){ tip("No reserve ammo.", 1000); beep(160,0.07,"square",0.04); return; }
+    reloading = true;
+    reloadUntil = performance.now() + RELOAD_MS;
+    tip("Reloading…", 700);
+    beep(280,0.05,"sine",0.04);
+  }
+
+  // Bullet visuals + hits
+  const bullets=[];
+  let hitMarkerUntil=0;
+
   function shoot(){
     if(reloading) return;
 
     if(mag <= 0){
-      // empty click
-      beep(120, 0.05, "square", 0.06);
-      toast("Out of ammo. Reload (R).", 900);
+      beep(120, 0.05, "square", 0.05);
+      tip("Empty. Reload (R).", 900);
       return;
     }
 
@@ -502,37 +552,27 @@
     cam.shakeY += (Math.random()*2-1) * SHAKE_ON_SHOT * DPR;
 
     const now = performance.now();
-    // aim world with aim assist if ADS
-    const aimW = getAimedWorldWithAssist(now);
+    const aimW = getAimedWorldWithAssist();
+
     const range = dist(aimW.x, aimW.y, cam.x, cam.y);
     const tof = calcTof(range);
     const impactW = leadDotWorld(aimW, tof);
 
     bullets.push({ t0: now, tof, aimW:{...aimW}, impactW, alive:true });
 
-    // shot sound
-    beep(880, 0.03, "square", 0.06);
-    beep(220, 0.04, "sine", 0.03);
+    // MW-ish gun pop (subtle)
+    beep(920, 0.03, "square", 0.05);
+    beep(240, 0.04, "sine", 0.03);
 
-    uiScore.textContent = `${kills} / ${shots}`;
-  }
-
-  // Hitmarker + killfeed
-  let hitMarkerUntil = 0;
-  let killFeedUntil = 0;
-  let killFeedText = "";
-
-  function setHitMarker(){
-    hitMarkerUntil = performance.now() + 140;
-  }
-
-  function setKillFeed(msg){
-    killFeedText = msg;
-    killFeedUntil = performance.now() + 1100;
+    // miss resets streak (MW feel)
+    // (we’ll only reset when bullet resolves as miss)
   }
 
   function resolveBullet(b){
     let best=null, bestD=Infinity;
+
+    // Headshot: treat top part of diamond as head zone
+    // We model it simply: if impact is above center by a small amount, headshot.
     for(const c of chars){
       if(!c.alive) continue;
       const d = dist(b.impactW.x, b.impactW.y, c.x, c.y);
@@ -543,97 +583,62 @@
 
     if(best){
       best.alive=false;
-
       kills++;
       streak++;
-      points += 100 + Math.min(150, streak*10);
+
+      const headshot = (b.impactW.y < best.y - 10);
+      const base = 100;
+      const hsBonus = headshot ? 75 : 0;
+      const streakBonus = Math.min(80, streak*8);
+      const earned = base + hsBonus + streakBonus;
+
+      points += earned;
 
       const range = Math.round(dist(best.x, best.y, cam.x, cam.y));
-      setHitMarker();
-      setKillFeed(`Target down, ${range}m`);
+      hitMarkerUntil = performance.now() + 140;
 
-      // confirm sound
-      beep(1100, 0.05, "sine", 0.06);
+      showBanner(headshot ? "HEADSHOT" : "TARGET DOWN", `+${earned}  •  ${range}m`, 950);
+      beep(1100, 0.05, "sine", 0.05);
 
       // objective check
-      const tgtId = currentTargetId();
+      const tgtId=currentTargetId();
       if(tgtId !== null && best.id === tgtId){
         points += 150;
-        toast(`Objective eliminated: <b>${best.icon.name}</b> (+150)`, 1400);
+        tip(`Objective eliminated: <b>${best.icon.name}</b> (+150)`, 1300);
         currentTargetIndex++;
         if(currentTargetIndex >= roundTargets.length){
-          toast(`<b>Round clear.</b> Reload and get ready.`, 1700);
+          tip(`<b>Round clear.</b>`, 1400);
           startNextRound();
         } else {
           updateObjectiveUI();
         }
-      } else {
-        toast(`Eliminated <b>${best.icon.name}</b>.`, 1100);
       }
-
-      // streak callouts
-      if(streak === 3) toast(`<b>3 Streak!</b> Keep it going.`, 1200);
-      if(streak === 5) toast(`<b>5 Streak!</b> You’re cooking.`, 1200);
-      if(streak === 7) toast(`<b>7 Streak!</b> Absolute menace.`, 1200);
-
     } else {
-      // miss resets streak (COD-ish)
-      if(streak > 0) toast(`Miss. Streak reset.`, 900);
+      if(streak > 0) tip("Miss. Streak reset.", 950);
       streak = 0;
       beep(180, 0.06, "square", 0.04);
     }
-
-    uiScore.textContent = `${kills} / ${shots}`;
-    uiStreak.textContent = String(streak);
-    uiPoints.textContent = String(points);
   }
 
-  // Aim assist (magnet) when ADS:
-  // pulls aim world toward closest target within radius
-  function getAimedWorldWithAssist(now){
-    const aimWraw = screenToWorld(cursor.x, cursor.y);
-
-    if(!scoped) return aimWraw;
-
-    // find nearest alive target within assist radius (in world space)
-    let best=null, bestD=Infinity;
-    for(const c of chars){
-      if(!c.alive) continue;
-      const d = dist(aimWraw.x, aimWraw.y, c.x, c.y);
-      if(d < AIM_ASSIST_RADIUS && d < bestD){
-        best=c; bestD=d;
-      }
-    }
-    if(!best) return aimWraw;
-
-    // stronger assist when steady (Shift)
-    const strength = steady ? 0.35 : 0.22;
-    return {
-      x: lerp(aimWraw.x, best.x, strength),
-      y: lerp(aimWraw.y, best.y, strength),
-    };
-  }
-
-  // Wind/gust mild
+  // Wind
   function updateWind(now){
     wind.dir += Math.sin(now*0.00012) * 0.0007;
-    if(!gust.active && Math.random() < 0.0018){
-      gust.active = true;
-      gust.extra = rand(1.5, 4.5);
-      gust.until = now + rand(900, 1900);
+    if(!gust.active && Math.random() < 0.0016){
+      gust.active=true;
+      gust.extra=rand(1.5,4.2);
+      gust.until=now + rand(900,1800);
     }
     if(gust.active && now >= gust.until){
       gust.active=false; gust.extra=0;
     }
-    uiWind.textContent = `${effectiveWind().toFixed(1)} kt`;
   }
 
   // Background
   function drawBackground(){
     ctx.clearRect(0,0,W,H);
-    const g = ctx.createRadialGradient(W*0.35,H*0.30, 10, W*0.35,H*0.30, Math.max(W,H)*0.9);
+    const g = ctx.createRadialGradient(W*0.34,H*0.28, 10, W*0.34,H*0.28, Math.max(W,H)*0.92);
     g.addColorStop(0, 'rgba(16,26,85,1)');
-    g.addColorStop(0.45,'rgba(7,10,20,1)');
+    g.addColorStop(0.48,'rgba(7,10,20,1)');
     g.addColorStop(1,'rgba(5,6,11,1)');
     ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
 
@@ -650,12 +655,12 @@
     }
     ctx.restore();
 
-    // grid subtle
+    // very subtle grid
     ctx.save();
-    ctx.globalAlpha=0.06;
+    ctx.globalAlpha=0.05;
     ctx.strokeStyle='rgba(255,255,255,1)';
     ctx.lineWidth=1*DPR;
-    const grid=150;
+    const grid=160;
     const tl = screenToWorld(0,0);
     const br = screenToWorld(W,H);
     const startX = Math.floor(tl.x/grid)*grid;
@@ -673,37 +678,32 @@
     ctx.restore();
   }
 
-  // Draw characters (COD readability + reactions)
-  function updateAndDrawChars(now){
-    const aimW = getAimedWorldWithAssist(now);
-    uiRange.textContent = `${Math.round(dist(aimW.x, aimW.y, cam.x, cam.y))} m`;
-
+  // Characters
+  function updateAndDrawChars(now, aimW){
     let lock=null, lockD=1e9;
-    const tgtId = currentTargetId();
+    const tgtId=currentTargetId();
 
     for(const c of chars){
       if(!c.alive) continue;
 
-      // movement
+      // move
       c.x += c.vx * 0.016;
       c.y += c.vy * 0.016;
-
       if(c.x<80||c.x>WORLD_W-80) c.vx*=-1;
       if(c.y<80||c.y>WORLD_H-80) c.vy*=-1;
       c.x=clamp(c.x,80,WORLD_W-80);
       c.y=clamp(c.y,80,WORLD_H-80);
 
-      // dance cue when ADS and near crosshair
+      // dance cue when ADS + near aim
       const d = dist(aimW.x, aimW.y, c.x, c.y);
       const wantDance = (scoped && d < DANCE_RADIUS) ? 1 : 0;
-      c.dance += (wantDance - c.dance) * 0.22;
+      c.dance += (wantDance - c.dance) * 0.20;
 
-      // wiggle
+      // subtle “reaction” (MW: less silly)
       const phase = (now*0.007 + c.seed) % (Math.PI*2);
-      const wig = c.dance * 8;
-      const dx = Math.sin(phase*3.2) * wig;
-      const dy = Math.cos(phase*2.5) * wig;
-
+      const wig = c.dance * 6.5;
+      const dx = Math.sin(phase*3.0) * wig;
+      const dy = Math.cos(phase*2.2) * wig;
       const px = c.x + dx;
       const py = c.y + dy;
 
@@ -717,12 +717,11 @@
       ctx.save();
       ctx.translate(p.x, p.y);
 
-      // base color
       const hue = c.icon.hue;
-      ctx.shadowColor = `hsla(${hue}, 90%, 65%, 0.55)`;
+      ctx.shadowColor = `hsla(${hue}, 90%, 65%, 0.52)`;
       ctx.shadowBlur = 12 * DPR;
 
-      // body diamond
+      // diamond
       ctx.beginPath();
       ctx.moveTo(0, -size*1.35);
       ctx.lineTo(size*1.25, 0);
@@ -732,10 +731,9 @@
       ctx.fillStyle = `hsla(${hue}, 85%, 55%, 0.95)`;
       ctx.fill();
 
-      // outline
-      ctx.shadowBlur=0;
-      ctx.lineWidth=1.2*DPR;
-      ctx.strokeStyle='rgba(0,0,0,0.55)';
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 1.2*DPR;
+      ctx.strokeStyle = 'rgba(0,0,0,0.55)';
       ctx.stroke();
 
       // glyph
@@ -745,33 +743,32 @@
       ctx.textBaseline='middle';
       ctx.fillText(c.icon.glyph, 0, 0);
 
-      // dance ring when locked-ish
-      if(c.dance > 0.2){
-        ctx.globalAlpha = 0.85;
-        ctx.strokeStyle = 'rgba(117,255,186,0.70)';
-        ctx.lineWidth = 1.5*DPR;
+      // When locked: small clean ring (MW cue)
+      if(c.dance > 0.25){
+        ctx.globalAlpha = 0.75;
+        ctx.strokeStyle = 'rgba(120,255,190,0.70)';
+        ctx.lineWidth = 1.4*DPR;
         ctx.beginPath();
-        ctx.arc(0,0, size*1.9, -0.6, 0.6);
+        ctx.arc(0,0, size*2.0, -0.55, 0.55);
         ctx.stroke();
       }
 
-      // objective ping (COD: helpful but not too easy when ADS)
+      // Objective ping only when not ADS (MW: don’t hold your hand)
       if(tgtId !== null && c.id === tgtId){
         ctx.globalAlpha = scoped ? 0.0 : 0.22;
-        ctx.strokeStyle = 'rgba(255,207,90,0.95)';
+        ctx.strokeStyle = 'rgba(255,210,90,0.95)';
         ctx.lineWidth = 2.1*DPR;
         ctx.beginPath();
-        ctx.arc(0,0, size*2.4, 0, Math.PI*2);
+        ctx.arc(0,0, size*2.35, 0, Math.PI*2);
         ctx.stroke();
       }
 
       ctx.restore();
     }
-
     return lock;
   }
 
-  // Tracers
+  // Bullets
   function drawBullets(now){
     for(const b of bullets){
       if(!b.alive) continue;
@@ -785,13 +782,13 @@
 
       ctx.save();
       ctx.globalCompositeOperation='lighter';
-      ctx.globalAlpha=0.50;
+      ctx.globalAlpha=0.48;
       ctx.strokeStyle='rgba(255,255,255,1)';
       ctx.lineWidth=2.0*DPR;
       ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(p.x,p.y); ctx.stroke();
       ctx.globalAlpha=0.85;
       ctx.fillStyle='rgba(255,255,255,1)';
-      ctx.beginPath(); ctx.arc(p.x,p.y,2.6*DPR,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x,p.y,2.5*DPR,0,Math.PI*2); ctx.fill();
       ctx.restore();
 
       if(age >= b.tof){
@@ -802,22 +799,25 @@
     for(let i=bullets.length-1;i>=0;i--) if(!bullets[i].alive) bullets.splice(i,1);
   }
 
-  // Vision post (optional)
+  // Vision post
   function applyVisionPost(){
     const mode = visionModes[visionIndex];
     if(mode==="Normal") return;
+
     ctx.save();
     ctx.globalCompositeOperation='source-atop';
+
     if(mode==="Night Vision"){
-      ctx.globalAlpha=0.22;
+      ctx.globalAlpha=0.20;
       ctx.fillStyle='rgb(40,255,120)';
       ctx.fillRect(0,0,W,H);
       ctx.globalAlpha=0.10;
       ctx.fillStyle='rgba(0,0,0,0.65)';
       for(let y=0;y<H;y+=6*DPR) ctx.fillRect(0,y,W,1*DPR);
     }
+
     if(mode==="Thermal"){
-      ctx.globalAlpha=0.14;
+      ctx.globalAlpha=0.12;
       ctx.fillStyle='rgb(255,120,30)';
       ctx.fillRect(0,0,W,H);
       ctx.globalAlpha=0.18;
@@ -827,19 +827,21 @@
       ctx.fillStyle=g;
       ctx.fillRect(0,0,W,H);
     }
+
     ctx.restore();
   }
 
-  // COD reticle + hitmarker + killfeed
-  function drawHUDOverlay(now, lock){
-    // If not scoped, draw simple crosshair
+  // MW reticle/scope overlay (clean)
+  function drawOverlay(now, lock){
+    const cx = cursor.x, cy = cursor.y;
+
     if(!scoped){
-      const cx = cursor.x, cy = cursor.y;
+      // Minimal MW crosshair
       ctx.save();
-      ctx.globalAlpha = 0.80;
-      ctx.strokeStyle = 'rgba(233,238,252,0.72)';
-      ctx.lineWidth = 2.0*DPR;
-      const L = 14*DPR, G = 6*DPR;
+      ctx.globalAlpha=0.75;
+      ctx.strokeStyle='rgba(235,240,255,0.70)';
+      ctx.lineWidth=2.0*DPR;
+      const L=14*DPR, G=6*DPR;
       ctx.beginPath();
       ctx.moveTo(cx-L, cy); ctx.lineTo(cx-G, cy);
       ctx.moveTo(cx+G, cy); ctx.lineTo(cx+L, cy);
@@ -847,215 +849,186 @@
       ctx.moveTo(cx, cy+G); ctx.lineTo(cx, cy+L);
       ctx.stroke();
       ctx.restore();
-    } else {
-      // Scope overlay
-      const cx = cursor.x, cy = cursor.y;
-      const r = (SCOPE_R_BASE / Math.sqrt(zoom)) * DPR;
-
-      ctx.save();
-      ctx.globalAlpha=0.74;
-      ctx.fillStyle='rgba(0,0,0,1)';
-      ctx.fillRect(0,0,W,H);
-
-      ctx.globalCompositeOperation='destination-out';
-      ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
-      ctx.globalCompositeOperation='source-over';
-
-      // rim
-      ctx.globalAlpha=1;
-      ctx.lineWidth=3*DPR;
-      ctx.strokeStyle='rgba(255,255,255,0.22)';
-      ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
-
-      // reticle
-      ctx.save();
-      ctx.translate(cx,cy);
-      ctx.strokeStyle = lock ? 'rgba(117,255,186,0.90)' : 'rgba(233,238,252,0.78)';
-      ctx.lineWidth = 1.8*DPR;
-      const L = r - 18*DPR;
-      const G = 16*DPR;
-      ctx.beginPath();
-      ctx.moveTo(-L,0); ctx.lineTo(-G,0);
-      ctx.moveTo(G,0);  ctx.lineTo(L,0);
-      ctx.moveTo(0,-L); ctx.lineTo(0,-G);
-      ctx.moveTo(0,G);  ctx.lineTo(0,L);
-      ctx.stroke();
-
-      ctx.fillStyle = lock ? 'rgba(117,255,186,0.98)' : 'rgba(233,238,252,0.88)';
-      ctx.beginPath(); ctx.arc(0,0,2.2*DPR,0,Math.PI*2); ctx.fill();
-
-      // hitmarker
-      if(performance.now() <= hitMarkerUntil){
-        ctx.strokeStyle='rgba(255,255,255,0.96)';
-        ctx.lineWidth=2.3*DPR;
-        const s=10*DPR;
-        ctx.beginPath();
-        ctx.moveTo(-s,-s); ctx.lineTo(s,s);
-        ctx.moveTo(s,-s);  ctx.lineTo(-s,s);
-        ctx.stroke();
-      }
-      ctx.restore();
-
-      // glare
-      ctx.globalAlpha=0.10;
-      ctx.fillStyle='rgba(255,255,255,1)';
-      ctx.beginPath();
-      ctx.arc(cx-r*0.22, cy-r*0.22, r*0.42, 0, Math.PI*2);
-      ctx.fill();
-
-      ctx.restore();
+      return;
     }
 
-    // kill feed text
-    if(performance.now() <= killFeedUntil){
-      ctx.save();
-      ctx.globalAlpha = 0.92;
-      ctx.fillStyle = 'rgba(0,0,0,0.45)';
-      const pad = 10*DPR;
-      const text = killFeedText;
-      ctx.font = `${Math.max(12, 14*DPR)}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace`;
-      const tw = ctx.measureText(text).width;
-      const x = W - (tw + pad*2) - 18*DPR;
-      const y = 110*DPR;
-      const h = 28*DPR;
-      roundRect(x, y, tw + pad*2, h, 12*DPR);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(233,238,252,0.92)';
-      ctx.textBaseline='middle';
-      ctx.fillText(text, x+pad, y + h/2);
-      ctx.restore();
-    }
-  }
+    // Scope mask
+    const r = (210 / Math.sqrt(zoom)) * DPR;
 
-  function roundRect(x,y,w,h,r){
+    ctx.save();
+    ctx.globalAlpha=0.76;
+    ctx.fillStyle='rgba(0,0,0,1)';
+    ctx.fillRect(0,0,W,H);
+
+    ctx.globalCompositeOperation='destination-out';
     ctx.beginPath();
-    ctx.moveTo(x+r,y);
-    ctx.arcTo(x+w,y,x+w,y+h,r);
-    ctx.arcTo(x+w,y+h,x,y+h,r);
-    ctx.arcTo(x,y+h,x,y,r);
-    ctx.arcTo(x,y,x+w,y,r);
-    ctx.closePath();
+    ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.fill();
+    ctx.globalCompositeOperation='source-over';
+
+    // rim
+    ctx.globalAlpha=1;
+    ctx.lineWidth=3*DPR;
+    ctx.strokeStyle='rgba(255,255,255,0.20)';
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
+
+    // reticle
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.strokeStyle = lock ? 'rgba(120,255,190,0.90)' : 'rgba(235,240,255,0.78)';
+    ctx.lineWidth = 1.8*DPR;
+    const L = r - 18*DPR;
+    const G = 16*DPR;
+    ctx.beginPath();
+    ctx.moveTo(-L,0); ctx.lineTo(-G,0);
+    ctx.moveTo(G,0);  ctx.lineTo(L,0);
+    ctx.moveTo(0,-L); ctx.lineTo(0,-G);
+    ctx.moveTo(0,G);  ctx.lineTo(0,L);
+    ctx.stroke();
+
+    ctx.fillStyle = lock ? 'rgba(120,255,190,0.98)' : 'rgba(235,240,255,0.88)';
+    ctx.beginPath(); ctx.arc(0,0,2.2*DPR,0,Math.PI*2); ctx.fill();
+
+    // MW hitmarker
+    if(performance.now() <= hitMarkerUntil){
+      ctx.strokeStyle='rgba(255,255,255,0.96)';
+      ctx.lineWidth=2.3*DPR;
+      const s=10*DPR;
+      ctx.beginPath();
+      ctx.moveTo(-s,-s); ctx.lineTo(s,s);
+      ctx.moveTo(s,-s);  ctx.lineTo(-s,s);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+
+    // slight glare
+    ctx.globalAlpha=0.10;
+    ctx.fillStyle='rgba(255,255,255,1)';
+    ctx.beginPath();
+    ctx.arc(cx-r*0.22, cy-r*0.22, r*0.42, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
   }
 
-  // Round/timer loop
+  // Round control
   function startNextRound(){
     round++;
-    uiRound.textContent = String(round);
+    roundTxt.textContent = String(round);
     timeLeft = ROUND_TIME_S;
 
-    // reward ammo a bit
+    // small ammo reward
     reserve = Math.min(180, reserve + 30);
     mag = MAG_SIZE;
-    reloading = false;
+    reloading=false;
 
-    // respawn some crowd
-    if(chars.filter(c=>c.alive).length < 25){
-      spawn();
-    } else {
-      // revive a bunch if needed (keep variety)
-      for(const c of chars){
-        if(Math.random() < 0.35) c.alive = true;
-      }
-    }
+    // ensure enough alive characters
+    if(chars.filter(c=>c.alive).length < 28) spawn();
+    else for(const c of chars) if(Math.random() < 0.28) c.alive = true;
 
     buildRoundTargets();
     updateAmmoUI();
-    toast(`<b>Round ${round}</b> — new targets.`, 1400);
+
+    tip(`<b>Round ${round}</b> — new objectives.`, 1300);
   }
 
   function resetRound(){
-    round = 1;
-    timeLeft = ROUND_TIME_S;
+    round=1;
+    timeLeft=ROUND_TIME_S;
 
     shots=0; kills=0; streak=0; points=0;
-    mag = MAG_SIZE; reserve = RESERVE_START;
-    reloading = false;
+    mag=MAG_SIZE; reserve=RESERVE_START;
+    reloading=false;
 
-    wind.base = rand(WIND_BASE_MIN, WIND_BASE_MAX);
+    wind.base = rand(7, 14);
     wind.dir = Math.random()*Math.PI*2;
-    gust.active=false; gust.extra=0; gust.until=0;
+    gust.active=false; gust.extra=0;
 
-    scoped = false;
-    zoom = ZOOM_OFF; zoomTarget = ZOOM_OFF;
+    scoped=false;
+    zoom=ZOOM_OFF; zoomTarget=ZOOM_OFF;
 
-    bullets.length = 0;
-
+    bullets.length=0;
     spawn();
     buildRoundTargets();
     updateAmmoUI();
 
-    uiRound.textContent = "1";
-    uiScope.textContent = "OFF";
-    uiScore.textContent = "0 / 0";
-    uiStreak.textContent = "0";
-    uiPoints.textContent = "0";
-    toast("Round reset.", 1100);
+    adsTxt.textContent="ADS: OFF";
+    roundTxt.textContent="1";
+
+    tip("Reset.", 900);
   }
 
-  // Main loop
+  // MAIN LOOP
   let last = performance.now();
   function tick(now){
     const dt = Math.min(40, now-last);
     last = now;
 
-    // reload finish
+    // finish reload
     if(reloading && now >= reloadUntil){
       const need = MAG_SIZE - mag;
       const take = Math.min(need, reserve);
       mag += take;
       reserve -= take;
-      reloading = false;
+      reloading=false;
       updateAmmoUI();
-      beep(520, 0.05, "sine", 0.05);
-      toast("Reload complete.", 900);
+      beep(520, 0.05, "sine", 0.04);
+      tip("Reload complete.", 900);
     }
-
-    // smooth ADS zoom
-    zoom += (zoomTarget - zoom) * ZOOM_SPEED;
-
-    // compute aim world (with assist if ADS)
-    const aimW = getAimedWorldWithAssist(now);
-    cursorWorld.x = aimW.x;
-    cursorWorld.y = aimW.y;
-
-    // camera follows aim (COD)
-    cam.x += (aimW.x - cam.x) * CAM_FOLLOW;
-    cam.y += (aimW.y - cam.y) * CAM_FOLLOW;
-
-    // clamp camera
-    cam.x = clamp(cam.x, 200, WORLD_W-200);
-    cam.y = clamp(cam.y, 200, WORLD_H-200);
-
-    // camera shake
-    cam.shakeX *= SHAKE_DECAY;
-    cam.shakeY *= SHAKE_DECAY;
 
     // timer
     timeLeft -= dt/1000;
     if(timeLeft <= 0){
-      toast(`<b>Time!</b> New round.`, 1200);
-      streak = 0;
-      uiStreak.textContent = "0";
+      tip(`<b>Time.</b> Next round.`, 1200);
+      streak=0;
       startNextRound();
     }
-    uiTimer.textContent = `${Math.max(0, timeLeft).toFixed(1)}s`;
+    timerTxt.textContent = `${Math.max(0,timeLeft).toFixed(1)}s`;
 
+    // wind
     updateWind(now);
+    windTxt.textContent = `${effectiveWind().toFixed(1)} kt`;
 
+    // smooth zoom
+    zoom += (zoomTarget - zoom) * ZOOM_SPEED;
+
+    // aim (with assist)
+    const aimW = getAimedWorldWithAssist();
+
+    // MW sway: applied by moving cursor world slightly (visual only)
+    const swayScale = holdBreath ? 0.35 : 1.0;
+    const swayX = Math.sin(now*SWAY_SPEED) * SWAY_MAG * swayScale;
+    const swayY = Math.cos(now*SWAY_SPEED*0.9) * SWAY_MAG * swayScale;
+    aimW.x += swayX;
+    aimW.y += swayY;
+
+    // camera follow
+    cam.x += (aimW.x - cam.x) * CAM_FOLLOW;
+    cam.y += (aimW.y - cam.y) * CAM_FOLLOW;
+    cam.x = clamp(cam.x, 200, WORLD_W-200);
+    cam.y = clamp(cam.y, 200, WORLD_H-200);
+
+    // shake decay
+    cam.shakeX *= SHAKE_DECAY;
+    cam.shakeY *= SHAKE_DECAY;
+
+    // draw
     drawBackground();
-
-    // lock: closest target in dance radius
-    let lock = updateAndDrawChars(now);
-
+    const lock = updateAndDrawChars(now, aimW);
     drawBullets(now);
     applyVisionPost();
-    drawHUDOverlay(now, lock);
+    drawOverlay(now, lock);
 
-    // UI refresh
-    uiWind.textContent = `${effectiveWind().toFixed(1)} kt`;
-    uiScore.textContent = `${kills} / ${shots}`;
-    uiStreak.textContent = String(streak);
-    uiPoints.textContent = String(points);
+    // range
+    rangeTxt.textContent = `${Math.round(dist(aimW.x, aimW.y, cam.x, cam.y))} m`;
+
+    // UI (lightweight)
+    pointsTxt.textContent = String(points);
+    killsTxt.textContent = String(kills);
+    shotsTxt.textContent = String(shots);
+    streakTxt.textContent = String(streak);
+    leftTxt.textContent = String(Math.max(0, roundTargets.length - currentTargetIndex));
     updateObjectiveUI();
 
     requestAnimationFrame(tick);
@@ -1066,18 +1039,25 @@
     spawn();
     buildRoundTargets();
     updateAmmoUI();
-    uiRound.textContent = "1";
-    uiTimer.textContent = `${ROUND_TIME_S.toFixed(1)}s`;
-    uiScope.textContent = "OFF";
-    uiWind.textContent = `${effectiveWind().toFixed(1)} kt`;
-    uiScore.textContent = "0 / 0";
-    uiStreak.textContent = "0";
-    uiPoints.textContent = "0";
 
-    toast(`COD-style: <b>Right-click ADS</b>, targets dance when you’re on them.`, 2400);
-    toast(`Reload with <b>R</b>. Rounds are <b>${ROUND_TIME_S}s</b> with ${TARGETS_PER_ROUND} objectives.`, 2400);
+    tip(`MW controls: <b>Right-click ADS</b>, <b>Left-click shoot</b>, <b>R reload</b>, <b>Shift hold breath</b>.`, 2600);
     requestAnimationFrame(tick);
   }
+
+  // ADS toggle UI
+  function setADSUI(){
+    adsTxt.textContent = `ADS: ${scoped ? "ON" : "OFF"}`;
+  }
+  function toggleADS(){
+    scoped=!scoped;
+    zoomTarget=scoped ? ZOOM_ON : ZOOM_OFF;
+    setADSUI();
+    beep(scoped ? 520 : 420, 0.05, "sine", 0.04);
+  }
+
+  // Hook ADS function used earlier
+  // (we already declared toggleADS below, but JS hoists — safe here)
+  // Start
   init();
 
 })();
